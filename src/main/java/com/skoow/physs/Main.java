@@ -9,9 +9,9 @@ public class Main {
     public static void main(String[] args) {
         String sourceCode = """
                 //Text code
-                val a = 5
-                val b = 3
-                val c = 6
+                val int a = 5
+                val int b = 3
+                val int c = 6
                 print(a+b+c)
                 
                 """;

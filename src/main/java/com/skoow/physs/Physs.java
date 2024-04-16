@@ -9,7 +9,7 @@ public class Physs {
     val id testIdentificator = $newidentificator
     testString = testIdentificator.toString();
     testInteger = 5.3 //Error
-    func @exports @alias($sum) int add(int a, int b) {
+    func @exports @ping @alias($sum) int add(int a, int b) {
         if(a == b) {
             quit a*2, print("Are equal!")
         }
@@ -19,10 +19,10 @@ public class Physs {
         instance() {
         }
         func static int test() {
-            print "Are test!"
+            print("Are test!")
         }
         func int nontest() {
-            print "Non test!"
+            print("Non test!")
         }
     }
     val MyObject myObject = new MyObject();

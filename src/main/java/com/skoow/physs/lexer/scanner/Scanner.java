@@ -36,6 +36,7 @@ public class Scanner {
 
         KEYWORDS.put("val",TokenType.VAL);
 
+
         KEYWORDS.put("str",TokenType.T_STR); KEYWORDS.put("int",TokenType.T_INT);
         KEYWORDS.put("flt",TokenType.T_FLOAT); KEYWORDS.put("bool",TokenType.T_BOOL);
         KEYWORDS.put("dbl",TokenType.T_DOUBLE); KEYWORDS.put("id",TokenType.T_IDENTIFIER);
@@ -101,7 +102,7 @@ public class Scanner {
     private Token scanIdentifier() {
         while(isAlphaNumeric(peek())) advance();
         String identifierValue = source.substring(position.start, position.current);
-        return new Token(TokenType.IDENTIFIER,identifierValue,identifierValue, position);
+        return new Token(findKeyword(identifierValue),identifierValue,identifierValue, position);
     }
 
     private Token scanString() {
