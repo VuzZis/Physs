@@ -1,5 +1,7 @@
 package com.skoow.physs;
 
+import com.skoow.physs.ast.Parser;
+import com.skoow.physs.ast.expression.Expr;
 import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.scanner.Scanner;
 
@@ -9,14 +11,13 @@ public class Main {
     public static void main(String[] args) {
         String sourceCode = """
                 //Text code
-                val int a = 5
-                val int b = 3
-                val int c = 6
-                print(a+b+c)
-                
+                $someIdentifier == "someIdentifier"
                 """;
         Scanner scanner = new Scanner(sourceCode);
         List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
         tokens.forEach(System.out::println);
+        Expr expr = parser.expr();
+        System.out.println(expr);
     }
 }

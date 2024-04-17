@@ -6,6 +6,12 @@ public class Position {
     public int line = 1;
     public int symbol = 0;
     public Position() {home();}
+    public Position(Position position) {
+        this.start = position.start;
+        this.current = position.current;
+        this.line = position.line;
+        this.symbol = position.symbol;
+    }
 
     public void newLine() {
         line++; symbol=0;

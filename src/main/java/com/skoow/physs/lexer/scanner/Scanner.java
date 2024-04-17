@@ -4,6 +4,7 @@ import com.skoow.physs.error.PhyssErrorHandler;
 import com.skoow.physs.error.errors.LexerException;
 import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.TokenType;
+import static com.skoow.physs.lexer.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,27 +20,40 @@ public class Scanner {
     private static final HashMap<String,TokenType> KEYWORDS = new HashMap<>();
 
     static {
-        CHAR_TOKENS.put('(',TokenType.LEFT_PAREN); CHAR_TOKENS.put(')',TokenType.RIGHT_PAREN);
-        CHAR_TOKENS.put('[',TokenType.LEFT_BRACKET); CHAR_TOKENS.put(']',TokenType.RIGHT_BRACKET);
-        CHAR_TOKENS.put('{',TokenType.LEFT_BRACE); CHAR_TOKENS.put('}',TokenType.RIGHT_BRACE);
-        CHAR_TOKENS.put(',',TokenType.COMMA); CHAR_TOKENS.put('.',TokenType.DOT);
-        CHAR_TOKENS.put('-',TokenType.MINUS); CHAR_TOKENS.put('+',TokenType.PLUS);
-        CHAR_TOKENS.put('*',TokenType.MULTIPLIER); CHAR_TOKENS.put('/',TokenType.SLASH);
-        CHAR_TOKENS.put(':',TokenType.COLON); CHAR_TOKENS.put(';',TokenType.SEMICOLON);
-        CHAR_TOKENS.put('~',TokenType.TILDA); CHAR_TOKENS.put('=',TokenType.EQUALS);
-        CHAR_TOKENS.put('>',TokenType.GREATER); CHAR_TOKENS.put('<',TokenType.LESS);
-        CHAR_TOKENS.put('!',TokenType.BANG); CHAR_TOKENS.put('"',TokenType.QUOTE);
-        CHAR_TOKENS.put('\0',TokenType.UNX);
+        CHAR_TOKENS.put('(',LEFT_PAREN); CHAR_TOKENS.put(')',RIGHT_PAREN);
+        CHAR_TOKENS.put('[',LEFT_BRACKET); CHAR_TOKENS.put(']',RIGHT_BRACKET);
+        CHAR_TOKENS.put('{',LEFT_BRACE); CHAR_TOKENS.put('}',RIGHT_BRACE);
+        CHAR_TOKENS.put(',',COMMA); CHAR_TOKENS.put('.',DOT);
+        CHAR_TOKENS.put('-',MINUS); CHAR_TOKENS.put('+',PLUS);
+        CHAR_TOKENS.put('*',MULTIPLIER); CHAR_TOKENS.put('/',SLASH);
+        CHAR_TOKENS.put(':',COLON); CHAR_TOKENS.put(';',SEMICOLON);
+        CHAR_TOKENS.put('~',TILDA); CHAR_TOKENS.put('=',EQUALS);
+        CHAR_TOKENS.put('>',GREATER); CHAR_TOKENS.put('<',LESS);
+        CHAR_TOKENS.put('!',BANG); CHAR_TOKENS.put('"',QUOTE);
+        CHAR_TOKENS.put('\0',UNX); CHAR_TOKENS.put('$',DOLLAR);
 
-        DOUBLE_CHAR_TOKENS.put("!=",TokenType.BANG_EQUALS); DOUBLE_CHAR_TOKENS.put("==",TokenType.EQUALS_EQUALS);
-        DOUBLE_CHAR_TOKENS.put(">=",TokenType.GREATER_EQUALS); DOUBLE_CHAR_TOKENS.put("<=",TokenType.LESS_EQUALS);
+        DOUBLE_CHAR_TOKENS.put("!=",BANG_EQUALS); DOUBLE_CHAR_TOKENS.put("==",EQUALS_EQUALS);
+        DOUBLE_CHAR_TOKENS.put(">=",GREATER_EQUALS); DOUBLE_CHAR_TOKENS.put("<=",LESS_EQUALS);
 
-        KEYWORDS.put("val",TokenType.VAL);
+        KEYWORDS.put("val",VAL); KEYWORDS.put("fn",FUNCTION);
+        KEYWORDS.put("object",CLASS);
+
+        KEYWORDS.put("print",PRINT); KEYWORDS.put("return",RETURN);
+
+        KEYWORDS.put("this",THIS);
+        KEYWORDS.put("super",SUPER);
+        KEYWORDS.put("nil",NIL);
+
+        KEYWORDS.put("or",OR); KEYWORDS.put("and",AND);
+
+        KEYWORDS.put("if",IF); KEYWORDS.put("else",ELSE);
+        KEYWORDS.put("for",FOR); KEYWORDS.put("while",WHILE);
+
+        KEYWORDS.put("str",T_STR); KEYWORDS.put("int",T_INT);
+        KEYWORDS.put("flt",T_FLOAT); KEYWORDS.put("bool",T_BOOL);
+        KEYWORDS.put("dbl",T_DOUBLE); KEYWORDS.put("id",T_IDENTIFIER);
 
 
-        KEYWORDS.put("str",TokenType.T_STR); KEYWORDS.put("int",TokenType.T_INT);
-        KEYWORDS.put("flt",TokenType.T_FLOAT); KEYWORDS.put("bool",TokenType.T_BOOL);
-        KEYWORDS.put("dbl",TokenType.T_DOUBLE); KEYWORDS.put("id",TokenType.T_IDENTIFIER);
     }
 
     public Scanner(String source) {
@@ -69,16 +83,19 @@ public class Scanner {
         TokenType cToken = findChar(c);
         TokenType cToken2 = findChar(c2);
         Token token = null;
-        if(cToken == TokenType.QUOTE) token = scanString();
-        else if(cToken == TokenType.IDENTIFIER) token = scanIdentifier();
-        else if(cToken == TokenType.NUMBER) token = scanNumber();
-        else if(cToken == TokenType.SLASH && cToken2 == TokenType.SLASH) {
+        if(cToken == QUOTE) token = scanString();
+        else if(cToken == IDENTIFIER) token = scanIdentifier();
+        else if(cToken == NUMBER) token = scanNumber();
+        else if(cToken == SLASH && cToken2 == SLASH) {
             while (peek() != '\n' && !isAtEnd()) advance();
             return null;
         }
         else {
             String cc = String.valueOf(c)+c2;
-            cToken = DOUBLE_CHAR_TOKENS.getOrDefault(cc,cToken);
+            if(DOUBLE_CHAR_TOKENS.containsKey(cc)) {
+                cToken = DOUBLE_CHAR_TOKENS.get(cc);
+                advance();
+            }
         }
 
         return token == null ? new Token(
@@ -96,7 +113,7 @@ public class Scanner {
             while (isNumeric(peek())) advance();
         }
         String numText = source.substring(position.start, position.current);
-        return new Token(TokenType.NUMBER,numText,Double.parseDouble(numText), position);
+        return new Token(NUMBER,numText,Double.parseDouble(numText), position);
     }
 
     private Token scanIdentifier() {
@@ -114,22 +131,22 @@ public class Scanner {
                 new LexerException("Unterminated string. Expected '\"'"));
         advance();
         String stringValue = source.substring(position.start+1, position.current-1);
-        return new Token(TokenType.STRING,stringValue,stringValue, position);
+        return new Token(STRING,stringValue,stringValue, position);
     }
 
     private TokenType findChar(char c) {
         TokenType token = findKeyword(String.valueOf(c));
         if(CHAR_TOKENS.containsKey(c)) token = CHAR_TOKENS.get(c);
-        if(token == TokenType.IDENTIFIER && isNumeric(c)) token = TokenType.NUMBER;
-        if(c == '\n') token = TokenType.UNX;
-        if(c == ' ' || c == '\t' || c == '\r') token = TokenType.UNX;
-        if(token == TokenType.IDENTIFIER && !isAlpha(c)) PhyssErrorHandler.error(position.line,position.symbol,
+        if(token == IDENTIFIER && isNumeric(c)) token = NUMBER;
+        if(c == '\n') token = UNX;
+        if(c == ' ' || c == '\t' || c == '\r') token = UNX;
+        if(token == IDENTIFIER && !isAlpha(c)) PhyssErrorHandler.error(position.line,position.symbol,
                 new LexerException("Unexpected character: '"+c+"'"));
         return token;
     }
 
     private TokenType findKeyword(String c) {
-        return KEYWORDS.getOrDefault(c,TokenType.IDENTIFIER);
+        return KEYWORDS.getOrDefault(c,IDENTIFIER);
     }
 
     private char peek() {
