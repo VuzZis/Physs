@@ -3,18 +3,16 @@ package com.skoow.physs.ast.expression;
 import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.scanner.Position;
 
-public class UnaryExpr implements Expr {
-    String name = "UnaryExpr";
+public class VarGetExpr implements Expr {
+    String name = "VarGetExpr";
     private final int line;
     private final int symbol;
-    public final Expr expr;
-    public final Token operator;
+    public final Token var;
 
-    public UnaryExpr(Expr left, Token operator, Position position) {
+    public VarGetExpr(Token var, Position position) {
         this.line = position.line;
         this.symbol = position.symbol;
-        this.expr = left;
-        this.operator = operator;
+        this.var = var;
     }
 
 

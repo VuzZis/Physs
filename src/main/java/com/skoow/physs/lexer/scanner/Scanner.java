@@ -72,6 +72,7 @@ public class Scanner {
             if(token == null) continue;
             addToken(tokens,token);
         }
+        addToken(tokens,EOF);
         return tokens;
     }
 

@@ -1,22 +1,22 @@
-package com.skoow.physs.ast.expression;
+package com.skoow.physs.ast.statement;
 
+import com.skoow.physs.ast.expression.Expr;
 import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.scanner.Position;
 
-public class UnaryExpr implements Expr {
-    String name = "UnaryExpr";
+public class VarDeclarStmt implements Stmt {
+    String name = "VarDecStmt";
     private final int line;
     private final int symbol;
-    public final Expr expr;
-    public final Token operator;
+    private final Token varName;
+    private final Expr initializer;
 
-    public UnaryExpr(Expr left, Token operator, Position position) {
+    public VarDeclarStmt(Token name, Expr expr, Position position) {
         this.line = position.line;
         this.symbol = position.symbol;
-        this.expr = left;
-        this.operator = operator;
+        this.varName = name;
+        this.initializer = expr;
     }
-
 
 
     @Override

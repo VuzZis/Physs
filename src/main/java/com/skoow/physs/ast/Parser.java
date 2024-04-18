@@ -1,8 +1,8 @@
 package com.skoow.physs.ast;
 
 import com.skoow.physs.ast.expression.*;
-import com.skoow.physs.ast.literal.BasicLiteral;
-import com.skoow.physs.ast.literal.IdentifierLiteral;
+import com.skoow.physs.ast.literal.*;
+import com.skoow.physs.ast.statement.*;
 import com.skoow.physs.error.PhyssErrorHandler;
 import com.skoow.physs.error.errors.AstException;
 import com.skoow.physs.lexer.Token;
@@ -11,7 +11,9 @@ import com.skoow.physs.lexer.scanner.Position;
 
 import static com.skoow.physs.lexer.TokenType.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Parser {
     private final List<Token> tokens;
@@ -22,88 +24,158 @@ public class Parser {
         this.tokens = tokens;
     }
 
+    public List<Stmt> parseStatements() {
+        position.home();
+        List<Stmt> stmts = new ArrayList<>();
+        while (!isAtEnd()) {
+            stmts.add(declaration());
+        }
+        return stmts.stream().toList();
+    }
+
+    private Stmt declaration() {
+        try {
+            if(match(VAL)) return varDeclaration();
+            return statement();
+        } catch(AstException exception) {
+            synchronize();
+            return null;
+        }
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER,"Expected variable name.");
+        Expr initializer = new BasicLiteral(null,position);
+        if(match(EQUALS)) {
+            initializer = expr();
+        }
+        consume(SEMICOLON,"Expected ';' after variable declaration.");
+        return new VarDeclarStmt(name,initializer,position);
+    }
+
+    private Stmt statement() {
+        if(match(PRINT)) return printStatement();
+        return exprStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr value = expr();
+        consume(SEMICOLON,"Expected ';' after print statement.");
+        return new PrintStmt(value,position);
+    }
+
+    private Stmt exprStatement() {
+        Expr value = expr();
+        consume(SEMICOLON,"Expected ';' after expression.");
+        return new ExprStmt(value,position);
+    }
+
+
     public Expr expr() {
         return equalityExpr();
     }
 
     private Expr equalityExpr() {
-        Position localPos = new Position(position);
+        
         Expr expr = comparison();
         while(match(BANG_EQUALS,EQUALS_EQUALS)) {
             Token operator = previous();
             Expr right = comparison();
-            expr = new BinaryExpr(expr,operator,right,localPos);
+            expr = new BinaryExpr(expr,operator,right,position);
         }
         return expr;
     }
 
     private Expr comparison() {
-        Position localPos = new Position(position);
+        
         Expr expr = term();
         while (match(GREATER,GREATER_EQUALS,LESS,LESS_EQUALS)) {
             Token operator = previous();
             Expr right = term();
-            expr = new BinaryExpr(expr,operator,right,localPos);
+            expr = new BinaryExpr(expr,operator,right,position);
         }
         return expr;
     }
 
     private Expr term() {
-        Position localPos = new Position(position);
+        
         Expr expr = factor();
         while(match(MINUS,PLUS)) {
             Token operator = previous();
             Expr right = factor();
-            expr = new BinaryExpr(expr,operator,right,localPos);
+            expr = new BinaryExpr(expr,operator,right,position);
         }
         return expr;
     }
 
     private Expr factor() {
-        Position localPos = new Position(position);
+        
         Expr expr = unary();
         while(match(MULTIPLIER,SLASH)) {
             Token operator = previous();
             Expr right = unary();
-            expr = new BinaryExpr(expr,operator,right,localPos);
+            expr = new BinaryExpr(expr,operator,right,position);
         }
         return expr;
     }
 
     private Expr unary() {
-        Position localPos = new Position(position);
+        
         if(match(BANG,MINUS)) {
             Token operator = previous();
             Expr right = unary();
-            return new UnaryExpr(right,operator,localPos);
+            return new UnaryExpr(right,operator,position);
         }
         return primary();
     }
 
     private Expr primary() {
-        Position localPos = new Position(position);
-        if(match(TRUE)) return new BasicLiteral(true,localPos);
-        if(match(FALSE)) return new BasicLiteral(false,localPos);
-        if(match(NIL)) return new BasicLiteral(null,localPos);
+        
+        if(match(TRUE)) return new BasicLiteral(true,position);
+        if(match(FALSE)) return new BasicLiteral(false,position);
+        if(match(NIL)) return new BasicLiteral(null,position);
 
-        if(match(STRING,NUMBER)) return new BasicLiteral(previous().literal,localPos);
+        if(match(STRING,NUMBER)) return new BasicLiteral(previous().literal,position);
         if(match(DOLLAR)) {
-            if(match(IDENTIFIER)) return new IdentifierLiteral(previous().lexeme,localPos);
+            return new IdentifierLiteral(consume(IDENTIFIER,"Expected identifier literal").lexeme,position);
         }
+        if(match(IDENTIFIER)) return new VarGetExpr(previous(),position);
         if(match(LEFT_PAREN)) {
             Expr expr = expr();
             consume(RIGHT_PAREN,"Expected ')' after expression.");
             return new GroupExpr(expr,position);
         }
-        PhyssErrorHandler.error(position.line,position.symbol,
-                new AstException("Unexpected token found when parsing script: "+peek().lexeme));
-        return new BasicLiteral(null,localPos);
+        throw error(peek(),"Expected expression, found: '"+peek().lexeme+"'");
     }
 
-    private void consume(TokenType tokenType, String s) {
-        if(peek().tokenType != tokenType) PhyssErrorHandler.error(position.line, position.symbol,
-                new AstException(s));
-        else advance();
+
+    private void synchronize() {
+        advance();
+        while (!isAtEnd()) {
+            if(previous().tokenType == SEMICOLON) return;
+            switch (peek().tokenType) {
+                case CLASS:
+                case FUNCTION:
+                case VAL:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+            advance();
+        }
+    }
+
+    private Token consume(TokenType tokenType, String s) {
+        if(check(tokenType)) return advance();
+        throw error(peek(),s);
+    }
+
+    private AstException error(Token token, String message) {
+        PhyssErrorHandler.error(token,message);
+        return new AstException(message);
     }
 
 

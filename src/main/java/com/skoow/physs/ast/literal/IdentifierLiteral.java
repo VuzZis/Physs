@@ -14,6 +14,11 @@ public class IdentifierLiteral implements Literal {
     }
 
     @Override
+    public String toString() {
+        return "$"+ value;
+    }
+
+    @Override
     public int line() {
         return line;
     }

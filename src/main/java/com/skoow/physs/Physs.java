@@ -1,6 +1,9 @@
 package com.skoow.physs;
 
+
+
 public class Physs {
+
     /*PHYSS EXAMPLE CODE
     val int testInteger = 5;
     val flt testFloat = 5.3;

@@ -1,22 +1,21 @@
-package com.skoow.physs.ast.literal;
+package com.skoow.physs.ast.statement;
 
+import com.skoow.physs.ast.expression.Expr;
 import com.skoow.physs.lexer.scanner.Position;
 
-public class BasicLiteral implements Literal {
+public class PrintStmt implements Stmt {
+    String name = "PrintStmt";
     private final int line;
     private final int symbol;
-    private final Object value;
+    private final Expr expr;
 
-    public BasicLiteral(Object value, Position position) {
+    public PrintStmt(Expr expr,Position position) {
         this.line = position.line;
         this.symbol = position.symbol;
-        this.value = value;
+        this.expr = expr;
     }
 
-    @Override
-    public String toString() {
-        return value.toString();
-    }
+
 
     @Override
     public int line() {

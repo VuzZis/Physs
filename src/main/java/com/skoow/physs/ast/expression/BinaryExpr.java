@@ -4,6 +4,7 @@ import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.scanner.Position;
 
 public class BinaryExpr implements Expr {
+    String name = "BinaryExpr";
     private final int line;
     private final int symbol;
     public final Expr left;
@@ -17,6 +18,7 @@ public class BinaryExpr implements Expr {
         this.operator = operator;
         this.right = right;
     }
+
 
     @Override
     public int line() {

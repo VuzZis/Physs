@@ -3,6 +3,7 @@ package com.skoow.physs.ast.expression;
 import com.skoow.physs.lexer.scanner.Position;
 
 public class GroupExpr implements Expr {
+    String name = "GroupExpr";
     private final int line;
     private final int symbol;
     public final Expr expr;
@@ -12,6 +13,7 @@ public class GroupExpr implements Expr {
         this.symbol = position.symbol;
         this.expr = left;
     }
+
 
     @Override
     public int line() {
