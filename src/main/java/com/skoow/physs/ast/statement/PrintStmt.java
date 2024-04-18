@@ -7,7 +7,7 @@ public class PrintStmt implements Stmt {
     String name = "PrintStmt";
     private final int line;
     private final int symbol;
-    private final Expr expr;
+    public final Expr expr;
 
     public PrintStmt(Expr expr,Position position) {
         this.line = position.line;

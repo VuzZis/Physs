@@ -3,7 +3,7 @@ package com.skoow.physs.ast;
 import com.skoow.physs.ast.expression.*;
 import com.skoow.physs.ast.literal.*;
 import com.skoow.physs.ast.statement.*;
-import com.skoow.physs.error.PhyssErrorHandler;
+import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.error.errors.AstException;
 import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.TokenType;
@@ -13,7 +13,6 @@ import static com.skoow.physs.lexer.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Parser {
     private final List<Token> tokens;
@@ -72,10 +71,35 @@ public class Parser {
 
 
     public Expr expr() {
-        return equalityExpr();
+        return assignment();
     }
 
-    private Expr equalityExpr() {
+    private Expr assignment() {
+        Expr expr = logical();
+        if(match(EQUALS)) {
+            Token equals = previous();
+            Expr value = assignment();
+            if(expr instanceof VarGetExpr varExpr) {
+                Token name = varExpr.var;
+                return new AssignmentExpr(name,value,position);
+            }
+            throw error(equals,"Invalid variable name needed assign to.");
+        }
+        return expr;
+    }
+
+    private Expr logical() {
+
+        Expr expr = equality();
+        while(match(OR,AND)) {
+            Token operator = previous();
+            Expr right = equality();
+            expr = new BinaryExpr(expr,operator,right,position);
+        }
+        return expr;
+    }
+
+    private Expr equality() {
         
         Expr expr = comparison();
         while(match(BANG_EQUALS,EQUALS_EQUALS)) {
@@ -174,7 +198,7 @@ public class Parser {
     }
 
     private AstException error(Token token, String message) {
-        PhyssErrorHandler.error(token,message);
+        PhyssReporter.error(token,message);
         return new AstException(message);
     }
 

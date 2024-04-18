@@ -7,7 +7,7 @@ public class ExprStmt implements Stmt {
     String name = "ExpressionStmt";
     private final int line;
     private final int symbol;
-    private final Expr expr;
+    public final Expr expr;
 
     public ExprStmt(Expr expr, Position position) {
         this.line = position.line;

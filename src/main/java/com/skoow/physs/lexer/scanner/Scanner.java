@@ -1,6 +1,6 @@
 package com.skoow.physs.lexer.scanner;
 
-import com.skoow.physs.error.PhyssErrorHandler;
+import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.error.errors.LexerException;
 import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.TokenType;
@@ -31,9 +31,13 @@ public class Scanner {
         CHAR_TOKENS.put('>',GREATER); CHAR_TOKENS.put('<',LESS);
         CHAR_TOKENS.put('!',BANG); CHAR_TOKENS.put('"',QUOTE);
         CHAR_TOKENS.put('\0',UNX); CHAR_TOKENS.put('$',DOLLAR);
+        CHAR_TOKENS.put('&',AND); CHAR_TOKENS.put('|',OR);
 
         DOUBLE_CHAR_TOKENS.put("!=",BANG_EQUALS); DOUBLE_CHAR_TOKENS.put("==",EQUALS_EQUALS);
         DOUBLE_CHAR_TOKENS.put(">=",GREATER_EQUALS); DOUBLE_CHAR_TOKENS.put("<=",LESS_EQUALS);
+        DOUBLE_CHAR_TOKENS.put("||",OR); DOUBLE_CHAR_TOKENS.put("&&",AND);
+
+        KEYWORDS.put("true",TRUE); KEYWORDS.put("false",FALSE);
 
         KEYWORDS.put("val",VAL); KEYWORDS.put("fn",FUNCTION);
         KEYWORDS.put("object",CLASS);
@@ -128,7 +132,7 @@ public class Scanner {
             if(peek() == '\n') position.newLine();
             advance();
         }
-        if(isAtEnd()) PhyssErrorHandler.error(position.line, position.symbol,
+        if(isAtEnd()) PhyssReporter.error(position.line, position.symbol,
                 new LexerException("Unterminated string. Expected '\"'"));
         advance();
         String stringValue = source.substring(position.start+1, position.current-1);
@@ -141,7 +145,7 @@ public class Scanner {
         if(token == IDENTIFIER && isNumeric(c)) token = NUMBER;
         if(c == '\n') token = UNX;
         if(c == ' ' || c == '\t' || c == '\r') token = UNX;
-        if(token == IDENTIFIER && !isAlpha(c)) PhyssErrorHandler.error(position.line,position.symbol,
+        if(token == IDENTIFIER && !isAlpha(c)) PhyssReporter.error(position.line,position.symbol,
                 new LexerException("Unexpected character: '"+c+"'"));
         return token;
     }

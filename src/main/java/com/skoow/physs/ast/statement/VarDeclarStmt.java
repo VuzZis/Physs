@@ -8,8 +8,8 @@ public class VarDeclarStmt implements Stmt {
     String name = "VarDecStmt";
     private final int line;
     private final int symbol;
-    private final Token varName;
-    private final Expr initializer;
+    public final Token varName;
+    public final Expr initializer;
 
     public VarDeclarStmt(Token name, Expr expr, Position position) {
         this.line = position.line;

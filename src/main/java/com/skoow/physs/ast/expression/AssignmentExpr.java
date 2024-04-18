@@ -1,22 +1,23 @@
-package com.skoow.physs.ast.literal;
+package com.skoow.physs.ast.expression;
 
+import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.scanner.Position;
 
-public class BasicLiteral implements Literal {
+public class AssignmentExpr implements Expr {
+    String name = "AssignmentExpr";
     private final int line;
     private final int symbol;
-    public final Object value;
+    public final Token var;
+    public final Expr value;
 
-    public BasicLiteral(Object value, Position position) {
+    public AssignmentExpr(Token var,Expr value, Position position) {
         this.line = position.line;
         this.symbol = position.symbol;
+        this.var = var;
         this.value = value;
     }
 
-    @Override
-    public String toString() {
-        return value.toString();
-    }
+
 
     @Override
     public int line() {
