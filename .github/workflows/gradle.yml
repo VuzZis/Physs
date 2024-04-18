@@ -38,7 +38,7 @@ jobs:
       run: |
         ./gradlew updateResources
 
-        if [ -n "$(git status --porcelain)" ]; then
+        if [ -n "$(git status --porcelain  -- src/main/resources/)" ]; then
           git config --global user.name "Github Actions"
           git add src/main/resources/*
           git commit -m "Automatic resources update"
