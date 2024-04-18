@@ -33,6 +33,17 @@ jobs:
       uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
     - name: Change wrapper permissions
       run: chmod +x ./gradlew
+    - name: Update bundles
+      if: ${{ github.repository == 'VuzZis/Physs' }}
+      run: |
+        ./gradlew updateResources
+
+        if [ -n "$(git status --porcelain)" ]; then
+          git config --global user.name "Github Actions"
+          git add src/main/resources/*
+          git commit -m "Automatic resources update"
+          git push
+        fi
     - name: Build
       run: ./gradlew build
     - name: Upload Artifact

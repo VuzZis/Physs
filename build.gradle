@@ -53,8 +53,8 @@ tasks.register('updateResources') {
         File langFolder = new File(resourcesFolder, "lang"); langFolder.mkdir();
         File mainLangJson = new File(langFolder, "en_us.json"); mainLangJson.createNewFile();
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        HashMap<String,String> EN_US = gson.fromJson(createInput(mainLangJson),
-                HashMap<String,String>.class);
+        TreeMap<String,String> EN_US = gson.fromJson(createInput(mainLangJson),
+                TreeMap<String,String>.class);
         if(EN_US == null) {
             println "Skipping langFile because of incorrect structure "+mainLangJson.getName();
             return;
@@ -68,6 +68,7 @@ tasks.register('updateResources') {
                 println "Skipping langFile because of incorrect structure "+otherLang.getName();
                 continue;
             }
+
             EN_US.forEach(LANG::putIfAbsent);
             OutputStreamWriter writer = createOutput(otherLang);
             gson.toJson(LANG,HashMap<String,String>,writer);
