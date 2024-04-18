@@ -1,3 +1,18 @@
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+
+import java.nio.charset.StandardCharsets
+
+buildscript {
+    repositories {
+        mavenLocal()
+    }
+
+    dependencies {
+        classpath 'com.google.code.gson:gson:2.9.1'
+    }
+}
+
 plugins {
     id 'java'
 }
@@ -15,4 +30,50 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+
+List<String> readFile(File file)
+        throws IOException {
+
+    BufferedReader reader = new BufferedReader(new FileReader(file));
+    return reader.readLines();
+}
+
+static InputStreamReader createInput(File f) throws FileNotFoundException
+{ return new InputStreamReader(new FileInputStream(f),StandardCharsets.UTF_8); }
+
+static OutputStreamWriter createOutput(File f) throws FileNotFoundException
+{ return new OutputStreamWriter(new FileOutputStream(f),StandardCharsets.UTF_8); }
+
+tasks.register('updateResources') {
+    doLast {
+
+        File resourcesFolder = new File("src/main/resources"); resourcesFolder.mkdir();
+        File langFolder = new File(resourcesFolder, "lang"); langFolder.mkdir();
+        File mainLangJson = new File(langFolder, "en_us.json"); mainLangJson.createNewFile();
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        HashMap<String,String> EN_US = gson.fromJson(createInput(mainLangJson),
+                HashMap<String,String>.class);
+        if(EN_US == null) {
+            println "Skipping langFile because of incorrect structure "+mainLangJson.getName();
+            return;
+        }
+        File[] otherLangs = langFolder.listFiles( (FileFilter) (f) -> {return f != mainLangJson && f.isFile() && f.getName().endsWith(".json")});
+        println "Comparing langs..";
+        for (final File otherLang in otherLangs) {
+            HashMap<String,String> LANG = gson.fromJson(createInput(otherLang),
+                    HashMap<String,String>.class);
+            if(LANG == null) {
+                println "Skipping langFile because of incorrect structure "+otherLang.getName();
+                continue;
+            }
+            EN_US.forEach(LANG::putIfAbsent);
+            OutputStreamWriter writer = createOutput(otherLang);
+            gson.toJson(LANG,HashMap<String,String>,writer);
+            writer.close();
+            println "Compared lang file "+otherLang.getName();
+        }
+
+    }
 }
