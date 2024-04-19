@@ -36,13 +36,15 @@ public class Scanner {
         DOUBLE_CHAR_TOKENS.put("!=",BANG_EQUALS); DOUBLE_CHAR_TOKENS.put("==",EQUALS_EQUALS);
         DOUBLE_CHAR_TOKENS.put(">=",GREATER_EQUALS); DOUBLE_CHAR_TOKENS.put("<=",LESS_EQUALS);
         DOUBLE_CHAR_TOKENS.put("||",OR); DOUBLE_CHAR_TOKENS.put("&&",AND);
+        DOUBLE_CHAR_TOKENS.put("->",ARROW);
 
         KEYWORDS.put("true",TRUE); KEYWORDS.put("false",FALSE);
 
         KEYWORDS.put("val",VAL); KEYWORDS.put("fn",FUNCTION);
         KEYWORDS.put("object",CLASS);
 
-        KEYWORDS.put("print",PRINT); KEYWORDS.put("return",RETURN);
+        KEYWORDS.put("out",PRINT); KEYWORDS.put("return",RETURN);
+        KEYWORDS.put("in",INPUT);
 
         KEYWORDS.put("this",THIS);
         KEYWORDS.put("super",SUPER);

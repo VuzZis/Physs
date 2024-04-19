@@ -31,6 +31,10 @@ public class PhyssReporter {
         System.out.printf("\u001B[39m[Physs][INFO][%s:%s] %s%n\u001B[0m",line,symbol,message);
     }
 
+    public static void reportInput(int line, int symbol, String message) {
+        System.out.printf("\u001B[36m[Physs][IN][%s:%s] %s\u001B[0m",line,symbol,message);
+    }
+
     public static void reportError(int line, int symbol, String where, String message) {
         System.out.printf("\u001B[31m[Physs][ERROR][%s:%s] Exception%s: %s%n\u001B[0m",line,symbol,where,message);
     }

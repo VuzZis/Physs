@@ -6,10 +6,16 @@ import com.skoow.physs.ast.statement.*;
 import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.error.errors.RunException;
 import com.skoow.physs.lexer.TokenType;
+import com.skoow.physs.runtime.exc.UndefinedValue;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class Interpreter {
     private final Program program;
     private final Scope scope;
+
     public Interpreter(Program program,Scope scope) {
         this.program = program;
         this.scope = scope;
@@ -30,6 +36,11 @@ public class Interpreter {
         if(line == null) return null;
         String nodeKind = line.getClass().getSimpleName();
         return switch (nodeKind) {
+            case "BlockStmt" -> blockStmt((BlockStmt) line,scope);
+
+            case "IfStmt" -> ifStmt((IfStmt) line,scope);
+            case "WhileStmt" -> whileStmt((WhileStmt) line, scope);
+            
             case "BasicLiteral" -> ((BasicLiteral) line).value;
             case "IdentifierLiteral" -> line.toString();
 
@@ -37,6 +48,7 @@ public class Interpreter {
             case "PrintStmt" -> print((PrintStmt) line, scope);
             case "ExprStmt" -> evaluate(((ExprStmt) line).expr,scope);
 
+            case "InputExpr" -> inputExpr((InputExpr) line, scope);
             case "AssignmentExpr" -> assignExpr((AssignmentExpr) line,scope);
             case "VarGetExpr" -> varExpr((VarGetExpr) line,scope);
             case "BinaryExpr" -> binaryExpr((BinaryExpr) line,scope);
@@ -45,6 +57,55 @@ public class Interpreter {
 
             default -> throw error(line,"Unexpected node found when evaluating: "+nodeKind);
         };
+    }
+
+    private Object whileStmt(WhileStmt line, Scope scope) {
+        Expr condition = line.condition;
+        int evaluateCount = 0;
+        double maxCount = (double) scope.getVariable("$$WHILE_MAX_ITERATIONS");
+        while (true) {
+            if(evaluateCount >= maxCount) throw error(line,"Infinite loop");
+            Object value = evaluate(condition,scope);
+            if(value instanceof Boolean b) {if (!b) break;}
+            else break;
+            evaluate(line.thenBranch,scope);
+            evaluateCount++;
+        }
+        return null;
+    }
+
+    private Object inputExpr(InputExpr line, Scope scope) {
+        Object toPrint = evaluate(line.expr,scope);
+        if(toPrint == null) toPrint = "";
+        PhyssReporter.reportInput(line.line(),line.symbol(),toPrint.toString());
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            return reader.readLine();
+        } catch (IOException e) {
+            throw error(line,"Failed to read input: "+e.getMessage());
+        }
+    }
+
+    private Object ifStmt(IfStmt line, Scope scope) {
+        Object condition = evaluate(line.condition,scope);
+        if(!(condition instanceof Boolean)) throw error(line.condition,"The result of condition is "+condition.getClass().getSimpleName()+" expected Boolean");
+        boolean condBoolean = (Boolean) condition;
+        if(condBoolean) evaluate(line.thenBranch,scope);
+        else if(line.elseBranch != null) evaluate(line.elseBranch,scope);
+        return null;
+    }
+
+    private Object blockStmt(BlockStmt line, Scope scope) {
+        Scope thisScope = new Scope(scope);
+        for (Stmt stmt : line.stmts) {
+            try {
+                evaluate(stmt,thisScope);
+            } catch(RunException e) {
+                PhyssReporter.reportError(stmt.line(),stmt.symbol()," at runtime",e.getMessage());
+                break;
+            }
+        }
+        return null;
     }
 
     private Object assignExpr(AssignmentExpr line, Scope scope) {
@@ -61,7 +122,9 @@ public class Interpreter {
     private Object varExpr(VarGetExpr line, Scope scope) {
         String varName = line.var.lexeme;
         try {
-            return scope.getVariable(varName);
+            Object obj = scope.getVariable(varName);
+            if(obj instanceof UndefinedValue) throw error(line,"Variable has not been initialized: "+varName);
+            return obj;
         } catch (RunException e) {
             throw e;
         }
@@ -162,20 +225,24 @@ public class Interpreter {
 
     private Object print(PrintStmt line, Scope scope) {
         Object toPrint = evaluate(line.expr,scope);
-        if(toPrint == null) PhyssReporter.reportWarn(line.line(),line.symbol()," at runtime","Null print.");
+        if(toPrint == null) {
+            PhyssReporter.reportWarn(line.line(),line.symbol()," at runtime","Null print.");
+            PhyssReporter.reportInfo(line.line(),line.symbol(),"nil");
+        }
         else PhyssReporter.reportInfo(line.line(),line.symbol(),toPrint.toString());
         return null;
     }
 
     private Object varDeclaration(VarDeclarStmt line,Scope scope) {
         String varName = line.varName.lexeme;
-        Object value = evaluate(line.initializer,scope);
+        Object value;
+        if(line.initializer == null) value = new UndefinedValue();
+        else value = evaluate(line.initializer,scope);
         scope.defineVariable(varName,value);
         return value;
     }
 
     private RunException error(Stmt stmt, String message) {
-        PhyssReporter.error(stmt,message);
         return new RunException(message);
     }
 }

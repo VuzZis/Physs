@@ -44,7 +44,7 @@ public class Parser {
 
     private Stmt varDeclaration() {
         Token name = consume(IDENTIFIER,"Expected variable name.");
-        Expr initializer = new BasicLiteral(null,position);
+        Expr initializer = null;
         if(match(EQUALS)) {
             initializer = expr();
         }
@@ -53,14 +53,50 @@ public class Parser {
     }
 
     private Stmt statement() {
+        if(match(IF)) return ifStatement();
         if(match(PRINT)) return printStatement();
+        if(match(WHILE)) return whileStatement();
+        if(match(LEFT_BRACE)) return new BlockStmt(block(),position);
         return exprStatement();
+    }
+
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN,"Expected '(' after 'while'");
+        Expr condition = expr();
+        consume(RIGHT_PAREN,"Expected ')' after 'while' condition");
+        Stmt body = statement();
+        return new WhileStmt(condition,body,position);
+    }
+
+    private Stmt ifStatement() {
+        consume(LEFT_PAREN,"Expected '(' after 'if'");
+        Expr condition = expr();
+        consume(RIGHT_PAREN,"Expected ')' after 'if' condition");
+        Stmt thenBranch = statement();
+        Stmt elseBranch = null;
+        if(match(ELSE)) {
+            elseBranch = statement();
+        }
+        return new IfStmt(condition,thenBranch,elseBranch,position);
+    }
+
+    private List<Stmt> block() {
+        List<Stmt> stmts = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            stmts.add(declaration());
+        }
+        consume(RIGHT_BRACE,"Expected '}' after program body.");
+        return stmts;
     }
 
     private Stmt printStatement() {
         Expr value = expr();
         consume(SEMICOLON,"Expected ';' after print statement.");
         return new PrintStmt(value,position);
+    }
+    private Expr inputExpr() {
+        Expr value = expr();
+        return new InputExpr(value,position);
     }
 
     private Stmt exprStatement() {
@@ -150,6 +186,7 @@ public class Parser {
             Expr right = unary();
             return new UnaryExpr(right,operator,position);
         }
+        if(match(INPUT)) return inputExpr();
         return primary();
     }
 
