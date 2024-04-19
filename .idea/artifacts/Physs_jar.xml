@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="Physs:jar">
+    <output-path>$PROJECT_DIR$/out/build/Physs</output-path>
+    <root id="root">
+      <element id="archive" name="Physs.jar">
+        <element id="module-output" name="Physs.main" />
+        <element id="module-source" name="Physs.main" />
+      </element>
+      <element id="library" level="project" name="Gradle: com.google.code.gson:gson:2.9.1" />
+      <element id="dir-copy" path="$PROJECT_DIR$/out_utils" />
+    </root>
+  </artifact>
+</component>

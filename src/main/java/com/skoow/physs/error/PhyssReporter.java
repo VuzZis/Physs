@@ -26,6 +26,9 @@ public class PhyssReporter {
     public static void reportDebug(int line, int symbol, String message) {
         System.out.printf("\u001B[35m[Physs][DEBUG][%s:%s] %s%n\u001B[0m",line,symbol,message);
     }
+    public static void reportDebug(String message) {
+        System.out.printf("\u001B[35m[Physs][DEBUG] %s%n\u001B[0m",message);
+    }
 
     public static void reportInfo(int line, int symbol, String message) {
         System.out.printf("\u001B[39m[Physs][INFO][%s:%s] %s%n\u001B[0m",line,symbol,message);

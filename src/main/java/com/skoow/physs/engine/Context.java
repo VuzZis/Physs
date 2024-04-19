@@ -32,7 +32,7 @@ public class Context {
         Interpreter interpreter = new Interpreter(script,scope);
         interpreter.interpreteProgram();
         double timeTook = new Date().getTime()-timeBegin;
-        PhyssReporter.reportDebug(0,0,String.format("Took %sms to evaluate %s",timeTook,fileName));
+        PhyssReporter.reportDebug(String.format("Took %sms to evaluate %s",timeTook,fileName));
     }
 
     public static Context begin() {
