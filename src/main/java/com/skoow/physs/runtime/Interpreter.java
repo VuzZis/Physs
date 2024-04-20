@@ -3,18 +3,23 @@ package com.skoow.physs.runtime;
 import com.skoow.physs.ast.expression.*;
 import com.skoow.physs.ast.literal.BasicLiteral;
 import com.skoow.physs.ast.statement.*;
+import com.skoow.physs.engine.Context;
 import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.error.errors.RunException;
 import com.skoow.physs.lexer.TokenType;
 import com.skoow.physs.runtime.exc.UndefinedValue;
+import com.skoow.physs.runtime.wrap.PhyssFn;
+import com.skoow.physs.runtime.wrap.PhyssProgramFn;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Interpreter {
     private final Program program;
-    private final Scope scope;
+    public final Scope scope;
 
     public Interpreter(Program program,Scope scope) {
         this.program = program;
@@ -36,7 +41,7 @@ public class Interpreter {
         if(line == null) return null;
         String nodeKind = line.getClass().getSimpleName();
         return switch (nodeKind) {
-            case "BlockStmt" -> blockStmt((BlockStmt) line,scope);
+            case "BlockStmt" -> blockStmt(((BlockStmt) line).stmts,scope);
 
             case "IfStmt" -> ifStmt((IfStmt) line,scope);
             case "WhileStmt" -> whileStmt((WhileStmt) line, scope);
@@ -45,9 +50,11 @@ public class Interpreter {
             case "IdentifierLiteral" -> line.toString();
 
             case "VarDeclarStmt" -> varDeclaration((VarDeclarStmt) line,scope);
+            case "FunctionStmt" -> fnDeclaration((FunctionStmt) line,scope);
             case "PrintStmt" -> print((PrintStmt) line, scope);
             case "ExprStmt" -> evaluate(((ExprStmt) line).expr,scope);
 
+            case "CallExpr" -> callExpr((CallExpr) line,scope);
             case "InputExpr" -> inputExpr((InputExpr) line, scope);
             case "AssignmentExpr" -> assignExpr((AssignmentExpr) line,scope);
             case "VarGetExpr" -> varExpr((VarGetExpr) line,scope);
@@ -57,6 +64,30 @@ public class Interpreter {
 
             default -> throw error(line,"Unexpected node found when evaluating: "+nodeKind);
         };
+    }
+
+    private Object fnDeclaration(FunctionStmt line, Scope scope) {
+        String varName = line.varName.lexeme;
+        PhyssProgramFn fn = new PhyssProgramFn(line);
+        Scope scopeNew = this.scope;
+        if(scope != scopeNew) throw error(line,"Cannot define function in inner scopes");
+        scopeNew.defineVariable(varName,fn);
+        return null;
+    }
+
+    private Object callExpr(CallExpr line, Scope scope) {
+        Object callee = evaluate(line.callee,scope);
+        if(!(callee instanceof PhyssFn)) throw error(line,"Not an callable object");
+        List<Object> args = new ArrayList<>();
+        for (Expr arg : line.args) args.add(evaluate(arg,scope));
+        PhyssFn fn = (PhyssFn) callee;
+        if(args.size() != fn.argCount())
+            throw error(line,String.format("Expected %s args, found %s",fn.argCount(),args.size()));
+        try {
+            return fn.methodOrConstructor(this, args);
+        } catch (StackOverflowError error) {
+            throw error(line,String.format("Call overflow"));
+        }
     }
 
     private Object whileStmt(WhileStmt line, Scope scope) {
@@ -95,9 +126,9 @@ public class Interpreter {
         return null;
     }
 
-    private Object blockStmt(BlockStmt line, Scope scope) {
+    public Object blockStmt(List<Stmt> stmts, Scope scope) {
         Scope thisScope = new Scope(scope);
-        for (Stmt stmt : line.stmts) {
+        for (Stmt stmt : stmts) {
             try {
                 evaluate(stmt,thisScope);
             } catch(RunException e) {

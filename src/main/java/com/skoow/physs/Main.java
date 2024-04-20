@@ -46,7 +46,7 @@ public class Main {
             String script = String.join("\n",reader.lines().toList());
             PhyssReporter.reportDebug("Evaluating "+file.getName());
 
-            Context context = Context.begin();
+            Context context = Context.beginWithNative();
             context.evaluateString(script,file.getName());
         } catch (FileNotFoundException ignored) {
 

@@ -45,6 +45,8 @@ public class Scanner {
 
         KEYWORDS.put("out",PRINT); KEYWORDS.put("return",RETURN);
         KEYWORDS.put("in",INPUT);
+        KEYWORDS.put("print",PRINT);
+        KEYWORDS.put("input",INPUT);
 
         KEYWORDS.put("this",THIS);
         KEYWORDS.put("super",SUPER);
@@ -63,7 +65,7 @@ public class Scanner {
     }
 
     public Scanner(String source) {
-        this.source = source.trim();
+        this.source = source;
         this.position = new Position();
     }
 

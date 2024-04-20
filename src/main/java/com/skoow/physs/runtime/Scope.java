@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Scope {
-    private final Scope top;
+    private Scope top;
     private final Map<String,Object> values = new HashMap<>();
     public Scope(Scope top) {
         this.top = top;
@@ -31,4 +31,7 @@ public class Scope {
         throw new RunException("Undefined variable '"+name+"'");
     }
 
+    public void setChild(Scope scope) {
+        scope.top = this;
+    }
 }

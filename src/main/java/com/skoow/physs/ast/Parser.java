@@ -12,6 +12,7 @@ import com.skoow.physs.lexer.scanner.Position;
 import static com.skoow.physs.lexer.TokenType.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Parser {
@@ -34,12 +35,29 @@ public class Parser {
 
     private Stmt declaration() {
         try {
+            if(match(FUNCTION)) return fnDeclaration("function");
             if(match(VAL)) return varDeclaration();
             return statement();
         } catch(AstException exception) {
             synchronize();
             return null;
         }
+    }
+
+    private Stmt fnDeclaration(String kind) {
+        Token name = consume(IDENTIFIER,"Expected %s name",kind);
+        consume(LEFT_PAREN,"Expected '(' after %s name",kind);
+        List<Token> params = new ArrayList<>();
+        if(!check(RIGHT_PAREN)) {
+            do {
+                if(params.size() >= 255) throw error(peek(),"More than 255 parameters specified");
+                params.add(consume(IDENTIFIER,"Expected parameter name"));
+            } while(match(COMMA));
+        }
+        consume(RIGHT_PAREN,"Expected ')' after %s parameters");
+        consume(LEFT_BRACE,"Expected '{' before %s body",kind);
+        List<Stmt> body = block();
+        return new FunctionStmt(name,params,body,position);
     }
 
     private Stmt varDeclaration() {
@@ -53,11 +71,47 @@ public class Parser {
     }
 
     private Stmt statement() {
+        if(match(FOR)) return forStatement();
         if(match(IF)) return ifStatement();
         if(match(PRINT)) return printStatement();
         if(match(WHILE)) return whileStatement();
         if(match(LEFT_BRACE)) return new BlockStmt(block(),position);
         return exprStatement();
+    }
+
+    private Stmt forStatement() {
+        consume(LEFT_PAREN,"Expected '(' after 'for'");
+
+        Stmt initializer;
+        if(match(SEMICOLON)) initializer = null;
+        else if (match(VAL)) initializer = varDeclaration();
+        else initializer = exprStatement();
+
+        Expr condition = null;
+        if(!check(SEMICOLON)) condition = expr();
+        consume(SEMICOLON,"Expected ';' after loop condition");
+
+        Expr increment = null;
+        if(!check(RIGHT_PAREN)) increment = expr();
+
+        consume(RIGHT_PAREN,"Expected ')' after 'for' clauses");
+        Stmt body = statement();
+        if(increment != null)
+            body = new BlockStmt(Arrays.asList(
+                body,
+                new ExprStmt(increment,position)
+            ),position);
+
+        if(condition == null) condition = new BasicLiteral(true,position);
+        body = new WhileStmt(condition,body,position);
+
+        if(initializer != null)
+            body = new BlockStmt(Arrays.asList(
+                initializer,
+                body
+            ),position);
+
+        return body;
     }
 
     private Stmt whileStatement() {
@@ -187,7 +241,27 @@ public class Parser {
             return new UnaryExpr(right,operator,position);
         }
         if(match(INPUT)) return inputExpr();
-        return primary();
+        return call();
+    }
+
+    private Expr call() {
+        Expr expr = primary();
+        while (true) {
+            if(match(LEFT_PAREN)) expr = finishCall(expr);
+            else break;
+        }
+        return expr;
+    }
+
+    private Expr finishCall(Expr callee) {
+        List<Expr> args = new ArrayList<>();
+        if(!check(RIGHT_PAREN))
+            do {
+                if(args.size() >= 255) error(peek(),"More than 255 arguments specified");
+                args.add(expr());
+            } while(match(COMMA));
+        Token paren = consume(RIGHT_PAREN,"Expected ')' after call arguments");
+        return new CallExpr(callee,paren,args,position);
     }
 
     private Expr primary() {
@@ -229,9 +303,9 @@ public class Parser {
         }
     }
 
-    private Token consume(TokenType tokenType, String s) {
+    private Token consume(TokenType tokenType, String s, Object... args) {
         if(check(tokenType)) return advance();
-        throw error(peek(),s);
+        throw error(peek(),String.format(s,args));
     }
 
     private AstException error(Token token, String message) {

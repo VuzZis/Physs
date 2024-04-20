@@ -26,4 +26,8 @@ public class TextUtils {
     public static String red(String s) {
         return String.format("\u001B[31m%s\u001B[0m",s);
     }
+
+    public static String green(String s) {
+        return String.format("\u001B[32m%s\u001B[0m",s);
+    }
 }

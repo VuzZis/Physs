@@ -11,10 +11,16 @@ import java.util.Date;
 
 public class Context {
 
+
+    private static final Scope global = new GlobalScope();
     private final Scope scope;
 
     public Context(Scope scope) {
         this.scope = scope;
+    }
+
+    public static Scope getGlobals() {
+        return global;
     }
 
     public Scope getScope() {
@@ -23,20 +29,24 @@ public class Context {
 
 
     public void evaluateString(String code, String fileName) {
-        long timeBegin = new Date().getTime();
 
         Scanner scanner = new Scanner(code);
         Parser astParser = new Parser(scanner.scanTokens());
 
         Program script = new Program(astParser.parseStatements());
+        long timeBegin = new Date().getTime();
         Interpreter interpreter = new Interpreter(script,scope);
         interpreter.interpreteProgram();
         double timeTook = new Date().getTime()-timeBegin;
         PhyssReporter.reportDebug(String.format("Took %sms to evaluate %s",timeTook,fileName));
     }
 
-    public static Context begin() {
-        Scope scope = new Scope();
+    public static Context beginWithNative() {
+        Scope scope = new Scope(getGlobals());
+        return new Context(scope);
+    }
+    public static Context beginWithCustom(Scope locGlobals) {
+        Scope scope = new Scope(locGlobals);
         return new Context(scope);
     }
 
