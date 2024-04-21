@@ -32,8 +32,10 @@ public class Context {
 
         Scanner scanner = new Scanner(code);
         Parser astParser = new Parser(scanner.scanTokens());
-
+        if(PhyssReporter.hadError) {PhyssReporter.reportDebug("Failed to lexer "+fileName); return;}
         Program script = new Program(astParser.parseStatements());
+        if(PhyssReporter.hadError) {PhyssReporter.reportDebug("Failed to parse "+fileName); return;}
+
         long timeBegin = new Date().getTime();
         Interpreter interpreter = new Interpreter(script,scope);
         interpreter.interpreteProgram();

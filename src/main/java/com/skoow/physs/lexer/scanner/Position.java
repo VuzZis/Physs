@@ -6,6 +6,7 @@ public class Position {
     public int line = 1;
     public int symbol = 0;
     public Position() {home();}
+    public Position(int line, int symbol) {this.line = line; this.symbol = symbol;}
     public Position(Position position) {
         this.start = position.start;
         this.current = position.current;

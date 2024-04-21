@@ -1,7 +1,6 @@
 package com.skoow.physs.engine;
 
-import com.skoow.physs.engine.global.MillisFn;
-import com.skoow.physs.engine.global.TypeOfFn;
+import com.skoow.physs.engine.global.*;
 import com.skoow.physs.runtime.Interpreter;
 import com.skoow.physs.runtime.Scope;
 import com.skoow.physs.runtime.wrap.PhyssFn;
@@ -13,5 +12,6 @@ public class GlobalScope extends Scope {
         super();
         defineVariable("typeof", new TypeOfFn());
         defineVariable("millis",new MillisFn());
+        defineVariable("isNum",new IsNumberFn());
     }
 }

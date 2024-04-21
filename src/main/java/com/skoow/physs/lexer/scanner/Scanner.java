@@ -32,11 +32,14 @@ public class Scanner {
         CHAR_TOKENS.put('!',BANG); CHAR_TOKENS.put('"',QUOTE);
         CHAR_TOKENS.put('\0',UNX); CHAR_TOKENS.put('$',DOLLAR);
         CHAR_TOKENS.put('&',AND); CHAR_TOKENS.put('|',OR);
+        CHAR_TOKENS.put('%',MOD);
 
         DOUBLE_CHAR_TOKENS.put("!=",BANG_EQUALS); DOUBLE_CHAR_TOKENS.put("==",EQUALS_EQUALS);
         DOUBLE_CHAR_TOKENS.put(">=",GREATER_EQUALS); DOUBLE_CHAR_TOKENS.put("<=",LESS_EQUALS);
         DOUBLE_CHAR_TOKENS.put("||",OR); DOUBLE_CHAR_TOKENS.put("&&",AND);
-        DOUBLE_CHAR_TOKENS.put("->",ARROW);
+        DOUBLE_CHAR_TOKENS.put("->",ARROW); DOUBLE_CHAR_TOKENS.put("~~",CAST);
+
+
 
         KEYWORDS.put("true",TRUE); KEYWORDS.put("false",FALSE);
 
@@ -44,7 +47,7 @@ public class Scanner {
         KEYWORDS.put("object",CLASS);
 
         KEYWORDS.put("out",PRINT); KEYWORDS.put("return",RETURN);
-        KEYWORDS.put("in",INPUT);
+        KEYWORDS.put("in",INPUT); KEYWORDS.put("exit",EXIT);
         KEYWORDS.put("print",PRINT);
         KEYWORDS.put("input",INPUT);
 
@@ -57,9 +60,9 @@ public class Scanner {
         KEYWORDS.put("if",IF); KEYWORDS.put("else",ELSE);
         KEYWORDS.put("for",FOR); KEYWORDS.put("while",WHILE);
 
-        KEYWORDS.put("str",T_STR); KEYWORDS.put("int",T_INT);
-        KEYWORDS.put("flt",T_FLOAT); KEYWORDS.put("bool",T_BOOL);
-        KEYWORDS.put("dbl",T_DOUBLE); KEYWORDS.put("id",T_IDENTIFIER);
+        KEYWORDS.put("str",T_STR);
+        KEYWORDS.put("bool",T_BOOL);
+        KEYWORDS.put("num",T_DOUBLE); KEYWORDS.put("id",T_IDENTIFIER);
 
 
     }

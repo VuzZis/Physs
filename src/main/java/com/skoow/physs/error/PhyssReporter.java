@@ -10,13 +10,14 @@ public class PhyssReporter {
     public static boolean hadError = false;
     public static void error(int line, int symbol, PhyssException exception) {
         reportError(line,symbol,"",exception.getMessage());
-        hadError = true;
+        PhyssReporter.hadError = true;
     }
     public static void error(Token token, String message) {
         if(token.tokenType == EOF)
             PhyssReporter.reportError(token.line,token.symbol," at end",message);
         else
             PhyssReporter.reportError(token.line,token.symbol," at '"+token.lexeme+"'", message);
+        PhyssReporter.hadError = true;
     }
 
     public static void error(Stmt token, String message) {

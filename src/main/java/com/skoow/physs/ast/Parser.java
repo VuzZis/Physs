@@ -71,12 +71,38 @@ public class Parser {
     }
 
     private Stmt statement() {
+        return statement(true);
+    }
+
+    private Stmt statement(boolean requireSemicolon) {
         if(match(FOR)) return forStatement();
         if(match(IF)) return ifStatement();
-        if(match(PRINT)) return printStatement();
+        if(match(PRINT)) return printStatement(requireSemicolon);
+        if(match(RETURN)) return returnStatement(requireSemicolon);
+        if(match(EXIT)) return exitStatement(requireSemicolon);
         if(match(WHILE)) return whileStatement();
         if(match(LEFT_BRACE)) return new BlockStmt(block(),position);
-        return exprStatement();
+        return exprStatement(true);
+    }
+
+    private Stmt exitStatement(boolean requireSemicolon) {
+        Token keyword = previous();
+        Stmt exitBody = statement(false);
+        Expr returnValue = null;
+        if(match(COMMA)) returnValue = expr();
+        if(requireSemicolon) consume(SEMICOLON,"Expected ';' after exit statement.");
+        return new BlockStmt(Arrays.asList(
+                exitBody,
+                new ReturnStmt(keyword,returnValue,position)
+        ),position);
+    }
+
+    private Stmt returnStatement(boolean needSemicolon) {
+        Token keyword = previous();
+        Expr value = null;
+        if(!check(SEMICOLON)) value = expr();
+        if(needSemicolon) consume(SEMICOLON,"Expected ';' after return statement.");
+        return new ReturnStmt(keyword,value,position);
     }
 
     private Stmt forStatement() {
@@ -85,7 +111,7 @@ public class Parser {
         Stmt initializer;
         if(match(SEMICOLON)) initializer = null;
         else if (match(VAL)) initializer = varDeclaration();
-        else initializer = exprStatement();
+        else initializer = exprStatement(true);
 
         Expr condition = null;
         if(!check(SEMICOLON)) condition = expr();
@@ -143,9 +169,9 @@ public class Parser {
         return stmts;
     }
 
-    private Stmt printStatement() {
+    private Stmt printStatement(boolean needSemicolon) {
         Expr value = expr();
-        consume(SEMICOLON,"Expected ';' after print statement.");
+        if(needSemicolon) consume(SEMICOLON,"Expected ';' after print statement.");
         return new PrintStmt(value,position);
     }
     private Expr inputExpr() {
@@ -153,9 +179,9 @@ public class Parser {
         return new InputExpr(value,position);
     }
 
-    private Stmt exprStatement() {
+    private Stmt exprStatement(boolean needSemicolon) {
         Expr value = expr();
-        consume(SEMICOLON,"Expected ';' after expression.");
+        if(needSemicolon) consume(SEMICOLON,"Expected ';' after expression.");
         return new ExprStmt(value,position);
     }
 
@@ -202,11 +228,22 @@ public class Parser {
 
     private Expr comparison() {
         
-        Expr expr = term();
+        Expr expr = cast();
         while (match(GREATER,GREATER_EQUALS,LESS,LESS_EQUALS)) {
             Token operator = previous();
-            Expr right = term();
+            Expr right = cast();
             expr = new BinaryExpr(expr,operator,right,position);
+        }
+        return expr;
+    }
+
+    private Expr cast() {
+        Expr expr = term();
+        if(match(CAST)) {
+            Token operator = advance();
+            Literals opLiteral = Literals.get(operator.tokenType);
+            if(opLiteral == null) throw error(operator,"Unexpected literal type cast to.");
+            expr = new CastExpr(expr,opLiteral,position);
         }
         return expr;
     }
@@ -225,7 +262,7 @@ public class Parser {
     private Expr factor() {
         
         Expr expr = unary();
-        while(match(MULTIPLIER,SLASH)) {
+        while(match(MULTIPLIER,SLASH,MOD)) {
             Token operator = previous();
             Expr right = unary();
             expr = new BinaryExpr(expr,operator,right,position);
@@ -234,13 +271,12 @@ public class Parser {
     }
 
     private Expr unary() {
-        
+        if(match(INPUT)) return inputExpr();
         if(match(BANG,MINUS)) {
             Token operator = previous();
-            Expr right = unary();
+            Expr right = call();
             return new UnaryExpr(right,operator,position);
         }
-        if(match(INPUT)) return inputExpr();
         return call();
     }
 
@@ -276,11 +312,26 @@ public class Parser {
         }
         if(match(IDENTIFIER)) return new VarGetExpr(previous(),position);
         if(match(LEFT_PAREN)) {
-            Expr expr = expr();
+            List<Expr> expr = new ArrayList<>();
+            do {
+                expr.add(expr());
+            } while (match(COMMA));
             consume(RIGHT_PAREN,"Expected ')' after expression.");
-            return new GroupExpr(expr,position);
+            if(match(ARROW)) return lambdaExpr(expr);
+            if(expr.size() > 1) throw error(peek(),"Unexpected list of expressions.");
+            return new GroupExpr(expr.get(0),position);
         }
         throw error(peek(),"Expected expression, found: '"+peek().lexeme+"'");
+    }
+
+    private Expr lambdaExpr(List<Expr> args) {
+        List<Token> params = new ArrayList<>();
+        args.forEach(e -> {
+            if(e instanceof VarGetExpr v) params.add(v.var);
+            else throw error(peek(),"Expected parameter, found "+e.getClass().getSimpleName());
+        });
+        Stmt stmt = statement(false);
+        return new LambdaExpr(params,stmt,position);
     }
 
 

@@ -6,7 +6,10 @@ import com.skoow.physs.ast.statement.*;
 import com.skoow.physs.engine.Context;
 import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.error.errors.RunException;
+import com.skoow.physs.lexer.Token;
 import com.skoow.physs.lexer.TokenType;
+import com.skoow.physs.lexer.scanner.Position;
+import com.skoow.physs.runtime.exc.Return;
 import com.skoow.physs.runtime.exc.UndefinedValue;
 import com.skoow.physs.runtime.wrap.PhyssFn;
 import com.skoow.physs.runtime.wrap.PhyssProgramFn;
@@ -15,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Interpreter {
@@ -33,6 +37,10 @@ public class Interpreter {
             } catch(RunException e) {
                 PhyssReporter.reportError(line.line(),line.symbol()," at runtime",e.getMessage());
                 break;
+            } catch (Return r) {
+                PhyssReporter.reportError(line.line(),line.symbol()," at runtime",
+                        "Unexpected return statement outside of a function");
+                break;
             }
         }
     }
@@ -45,7 +53,8 @@ public class Interpreter {
 
             case "IfStmt" -> ifStmt((IfStmt) line,scope);
             case "WhileStmt" -> whileStmt((WhileStmt) line, scope);
-            
+            case "ReturnStmt" -> returnStmt((ReturnStmt) line,scope);
+
             case "BasicLiteral" -> ((BasicLiteral) line).value;
             case "IdentifierLiteral" -> line.toString();
 
@@ -54,7 +63,9 @@ public class Interpreter {
             case "PrintStmt" -> print((PrintStmt) line, scope);
             case "ExprStmt" -> evaluate(((ExprStmt) line).expr,scope);
 
+            case "LambdaExpr" -> lambdaExpr((LambdaExpr) line, scope);
             case "CallExpr" -> callExpr((CallExpr) line,scope);
+            case "CastExpr" -> castExpr((CastExpr) line, scope);
             case "InputExpr" -> inputExpr((InputExpr) line, scope);
             case "AssignmentExpr" -> assignExpr((AssignmentExpr) line,scope);
             case "VarGetExpr" -> varExpr((VarGetExpr) line,scope);
@@ -64,6 +75,31 @@ public class Interpreter {
 
             default -> throw error(line,"Unexpected node found when evaluating: "+nodeKind);
         };
+    }
+
+    private Object castExpr(CastExpr line, Scope scope) {
+        Object val = evaluate(line.expr,scope);
+        try {
+            return line.operator.cast(val);
+        } catch (ClassCastException e) {
+            throw error(line,String.format("Cannot cast %s to %s",val.toString(),line.operator.name()));
+        }
+    }
+
+    private Object lambdaExpr(LambdaExpr line, Scope scope) {
+        PhyssProgramFn fn = new PhyssProgramFn(
+                new FunctionStmt(
+                        new Token(TokenType.IDENTIFIER,"lambda","lambda",0,0),
+                        line.params,
+                        Arrays.asList(line.body),
+                        new Position(line.line(),line.symbol())));
+        return fn;
+    }
+
+    private Object returnStmt(ReturnStmt line, Scope scope) {
+        Object value = null;
+        if(line.expr != null) value = evaluate(line.expr,scope);
+        throw new Return(value);
     }
 
     private Object fnDeclaration(FunctionStmt line, Scope scope) {
@@ -87,6 +123,8 @@ public class Interpreter {
             return fn.methodOrConstructor(this, args);
         } catch (StackOverflowError error) {
             throw error(line,String.format("Call overflow"));
+        } catch (Return ret) {
+            return ret.value;
         }
     }
 
@@ -132,8 +170,7 @@ public class Interpreter {
             try {
                 evaluate(stmt,thisScope);
             } catch(RunException e) {
-                PhyssReporter.reportError(stmt.line(),stmt.symbol()," at runtime",e.getMessage());
-                break;
+                throw e;
             }
         }
         return null;
@@ -168,16 +205,16 @@ public class Interpreter {
             case MINUS:
                 if(obj instanceof Double oD) return -oD;
                 else throw error(line,String.format("Cannot apply operator '-' for type %s",
-                        obj.getClass().getSimpleName()));
+                        getName(obj)));
 
             case BANG:
                 if(obj instanceof Boolean oB) return !oB;
                 else throw error(line,String.format("Cannot apply operator '!' for type %s",
-                        obj.getClass().getSimpleName()));
+                        getName(obj)));
 
             default:
                 throw error(line,String.format("Unexpected operator found for expression: %s%s",
-                        line.operator.lexeme,obj.getClass().getSimpleName()));
+                        line.operator.lexeme,getName(obj)));
         }
     }
 
@@ -192,7 +229,7 @@ public class Interpreter {
 
                 if(left instanceof Double lD && right instanceof Double rD) return lD-rD;
                 else throw error(line,String.format("Cannot apply operator '-' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                        getName(left),getName(right)));
             case PLUS:
                 if(left instanceof Boolean bl) left = bl ? 1d : 0d;
                 if(right instanceof Boolean br) right = br ? 1d : 0d;
@@ -201,7 +238,7 @@ public class Interpreter {
                 else if(left instanceof String lS) return lS+right;
                 else if(right instanceof String rS) return left.toString()+rS;
                 else throw error(line,String.format("Cannot apply operator '+' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                        getName(left),getName(right)));
             case MULTIPLIER:
                 if(left instanceof Boolean bl) left = bl ? 1d : 0d;
                 if(right instanceof Boolean br) right = br ? 1d : 0d;
@@ -209,14 +246,22 @@ public class Interpreter {
                 if(left instanceof Double lD && right instanceof Double rD) return lD*rD;
                 else if(left instanceof String lS && right instanceof Double rD) return lS.repeat((int) rD.doubleValue());
                 else throw error(line,String.format("Cannot apply operator '*' for type %s, %s",
-                            left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                            getName(left),getName(right)));
             case SLASH:
                 if(left instanceof Boolean bl) left = bl ? 1d : 0d;
                 if(right instanceof Boolean br) right = br ? 1d : 0d;
 
                 if(left instanceof Double lD && right instanceof Double rD) return lD/rD;
-                else throw error(line,String.format("Cannot apply operator '-' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                else throw error(line,String.format("Cannot apply operator '/' for type %s, %s",
+                        getName(left),getName(right)));
+
+            case MOD:
+                if(left instanceof Boolean bl) left = bl ? 1d : 0d;
+                if(right instanceof Boolean br) right = br ? 1d : 0d;
+
+                if(left instanceof Double lD && right instanceof Double rD) return lD%rD;
+                else throw error(line,String.format("Cannot apply operator '%%' for type %s, %s",
+                        getName(left),getName(right)));
 
             case EQUALS_EQUALS:
                 return left.equals(right);
@@ -225,24 +270,24 @@ public class Interpreter {
             case GREATER:
                 if(left instanceof Double lD && right instanceof Double rD) return lD>rD;
                 else throw error(line,String.format("Cannot apply operator '>' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                        getName(left),getName(right)));
             case LESS:
                 if(left instanceof Double lD && right instanceof Double rD) return lD<rD;
                 else throw error(line,String.format("Cannot apply operator '<' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                        getName(left),getName(right)));
             case GREATER_EQUALS:
                 if(left instanceof Double lD && right instanceof Double rD) return lD>=rD;
                 else throw error(line,String.format("Cannot apply operator '>=' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                        getName(left),getName(right)));
             case LESS_EQUALS:
                 if(left instanceof Double lD && right instanceof Double rD) return lD<=rD;
                 else throw error(line,String.format("Cannot apply operator '<=' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                        getName(left),getName(right)));
 
             case AND:
                 if(left instanceof Boolean lD && right instanceof Boolean rD) return lD && rD;
                 else throw error(line,String.format("Cannot apply operator 'and &&' for type %s, %s",
-                        left.getClass().getSimpleName(),right.getClass().getSimpleName()));
+                        getName(left),getName(right)));
 
             case OR:
                 if(left instanceof Boolean lD && right instanceof Boolean rD) return lD || rD;
@@ -250,8 +295,13 @@ public class Interpreter {
 
             default:
                 throw error(line,String.format("Unexpected operator found for expression: %s %s %s",
-                        left.getClass().getSimpleName(),line.operator.lexeme,right.getClass().getSimpleName()));
+                        getName(left),line.operator.lexeme,getName(right)));
         }
+    }
+    
+    private static String getName(Object obj) {
+        if(obj == null) return "nil";
+        return obj.getClass().getSimpleName();
     }
 
     private Object print(PrintStmt line, Scope scope) {
