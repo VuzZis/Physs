@@ -17,6 +17,13 @@ plugins {
     id 'java'
 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+tasks.withType(Test).configureEach {
+    jvmArgs '-Dfile.encoding=UTF-8'
+}
+
 group = 'com.skoow.physs'
 version = '1.0-SNAPSHOT'
 

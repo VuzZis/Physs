@@ -1,5 +1,6 @@
 package com.skoow.physs.lexer.scanner;
 
+import com.skoow.physs.engine.component.Translatable;
 import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.error.errors.LexerException;
 import com.skoow.physs.lexer.Token;
@@ -44,14 +45,14 @@ public class Scanner {
         KEYWORDS.put("true",TRUE); KEYWORDS.put("false",FALSE);
 
         KEYWORDS.put("val",VAL); KEYWORDS.put("fn",FUNCTION);
-        KEYWORDS.put("object",CLASS);
+        KEYWORDS.put("object",CLASS); KEYWORDS.put("static",STATIC);
 
         KEYWORDS.put("out",PRINT); KEYWORDS.put("return",RETURN);
         KEYWORDS.put("in",INPUT); KEYWORDS.put("exit",EXIT);
         KEYWORDS.put("print",PRINT);
         KEYWORDS.put("input",INPUT);
 
-        KEYWORDS.put("this",THIS);
+        //KEYWORDS.put("this",THIS);
         KEYWORDS.put("super",SUPER);
         KEYWORDS.put("nil",NIL);
 
@@ -137,12 +138,19 @@ public class Scanner {
     private Token scanString() {
         while(!isAtEnd() && peek() != '"') {
             if(peek() == '\n') position.newLine();
+            if(peek() == '\\' && peekNext() == '"') advance();
             advance();
         }
         if(isAtEnd()) PhyssReporter.error(position.line, position.symbol,
-                new LexerException("Unterminated string. Expected '\"'"));
+                new LexerException(Translatable.get("scanner.string_unterminated")));
         advance();
         String stringValue = source.substring(position.start+1, position.current-1);
+        stringValue = stringValue.replace("\\n","\n");
+        stringValue = stringValue.replace("\\s", " ");
+        stringValue = stringValue.replace("\\t", "\t");
+        stringValue = stringValue.replace("\\\\","\\");
+        stringValue = stringValue.replace("\\\"","\"");
+
         return new Token(STRING,stringValue,stringValue, position);
     }
 
@@ -152,8 +160,9 @@ public class Scanner {
         if(token == IDENTIFIER && isNumeric(c)) token = NUMBER;
         if(c == '\n') token = UNX;
         if(c == ' ' || c == '\t' || c == '\r') token = UNX;
+        if(c == '\\') return BACK_SLASH;
         if(token == IDENTIFIER && !isAlpha(c)) PhyssReporter.error(position.line,position.symbol,
-                new LexerException("Unexpected character: '"+c+"'"));
+                new LexerException(String.format(Translatable.get("scanner.unx_character"),c)));
         return token;
     }
 
@@ -197,7 +206,11 @@ public class Scanner {
         return c >= '0' && c <= '9';
     }
     public boolean isAlpha(char c) {
-        return (c >= 'a' && c <= 'z') ||  (c >= 'A' && c <= 'Z') || c == '_';
+        return (c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                (c >= 'а' && c <= 'я') ||
+                (c >= 'А' && c <= 'Я') ||
+                c == '_';
     }
     public boolean isAlphaNumeric(char c) {
         return isAlpha(c) || isNumeric(c);

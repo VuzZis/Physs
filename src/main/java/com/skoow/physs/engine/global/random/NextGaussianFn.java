@@ -1,4 +1,4 @@
-package com.skoow.physs.engine.global;
+package com.skoow.physs.engine.global.random;
 
 import com.skoow.physs.runtime.Interpreter;
 import com.skoow.physs.runtime.wrap.PhyssFn;
@@ -6,21 +6,15 @@ import com.skoow.physs.util.TextUtils;
 
 import java.util.List;
 
-public class IsNumberFn implements PhyssFn {
+public class NextGaussianFn implements PhyssFn {
     @Override
     public int argCount() {
-        return 1;
+        return 0;
     }
 
     @Override
     public Object methodOrConstructor(Interpreter interpreter, List<Object> args) {
-        Object obj = args.get(0);
-        try {
-            Double.parseDouble(obj.toString());
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
+        return RandomClass.random.nextGaussian();
     }
 
     @Override

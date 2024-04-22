@@ -1,7 +1,11 @@
 package com.skoow.physs.runtime;
 
+import com.skoow.physs.engine.component.Translatable;
 import com.skoow.physs.error.errors.RunException;
+import com.skoow.physs.runtime.wrap.PhyssClass;
+import com.skoow.physs.runtime.wrap.PhyssFn;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,22 +17,30 @@ public class Scope {
     }
     public Scope() {
         this.top = null;
-        defineVariable("$$WHILE_MAX_ITERATIONS",Math.pow(2,14));
     }
 
     public void defineVariable(String name, Object value) throws RunException {
-        if(values.containsKey(name)) throw new RunException("Variable already exists: '"+name+"'");
+        if(value instanceof Class<?> clazz) {
+            /*Method[] methods = clazz.getMethods();
+            Map<String, PhyssFn> funs = new HashMap<>();
+            for (Method method : methods) {
+
+            }
+            value = new PhyssClass(clazz.getSimpleName(), )*/
+        }
+        if(values.containsKey(name)) throw new RunException(Translatable.getf("scope.variable_exists",name));
         values.put(name,value);
     }
     public void updateVariable(String name, Object value) throws RunException {
         if(values.containsKey(name)) values.put(name,value);
-        if(top != null) top.updateVariable(name,value);
+        else if(top != null) top.updateVariable(name,value);
+        else throw new RunException(Translatable.getf("scope.variable_undefined",name));
     }
 
     public Object getVariable(String name) throws RunException {
         if(values.containsKey(name)) return values.get(name);
         if(top != null) return top.getVariable(name);
-        throw new RunException("Undefined variable '"+name+"'");
+        throw new RunException(Translatable.getf("scope.variable_undefined",name));
     }
 
     public void setChild(Scope scope) {

@@ -2,6 +2,7 @@ package com.skoow.physs.engine;
 
 import com.skoow.physs.ast.Parser;
 import com.skoow.physs.ast.statement.Program;
+import com.skoow.physs.engine.component.Translatable;
 import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.lexer.scanner.Scanner;
 import com.skoow.physs.runtime.Interpreter;
@@ -12,11 +13,12 @@ import java.util.Date;
 public class Context {
 
 
-    private static final Scope global = new GlobalScope();
+    private static Scope global = new GlobalScope();
     private final Scope scope;
 
     public Context(Scope scope) {
         this.scope = scope;
+        Context.global = new GlobalScope();
     }
 
     public static Scope getGlobals() {
@@ -29,18 +31,18 @@ public class Context {
 
 
     public void evaluateString(String code, String fileName) {
-
+        PhyssReporter.name = fileName;
         Scanner scanner = new Scanner(code);
         Parser astParser = new Parser(scanner.scanTokens());
-        if(PhyssReporter.hadError) {PhyssReporter.reportDebug("Failed to lexer "+fileName); return;}
+        if(PhyssReporter.hadError) {PhyssReporter.reportDebug(Translatable.getf("engine.context.scan_failed",fileName)); return;}
         Program script = new Program(astParser.parseStatements());
-        if(PhyssReporter.hadError) {PhyssReporter.reportDebug("Failed to parse "+fileName); return;}
+        if(PhyssReporter.hadError) {PhyssReporter.reportDebug(Translatable.getf("engine.context.parse_failed",fileName)); return;}
 
         long timeBegin = new Date().getTime();
         Interpreter interpreter = new Interpreter(script,scope);
         interpreter.interpreteProgram();
         double timeTook = new Date().getTime()-timeBegin;
-        PhyssReporter.reportDebug(String.format("Took %sms to evaluate %s",timeTook,fileName));
+        PhyssReporter.reportDebug(Translatable.getf("engine.context.evaluate_time",""+timeTook,fileName));
     }
 
     public static Context beginWithNative() {

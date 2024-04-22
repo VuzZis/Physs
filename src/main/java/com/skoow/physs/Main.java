@@ -1,11 +1,13 @@
 package com.skoow.physs;
 
 import com.skoow.physs.engine.Context;
+import com.skoow.physs.engine.component.Translatable;
 import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.util.TextUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -14,6 +16,10 @@ public class Main {
     private static String[] args;
 
     public static void main(String[] args) {
+        Translatable.loadLangs();
+        String lang = Locale.getDefault().getLanguage().toLowerCase()+"_"+Locale.getDefault().getCountry().toLowerCase();
+        Translatable.setLang(lang);
+        PhyssReporter.reportDebug("Automatically set language to: "+(Translatable.LANGS.containsKey(lang) ? lang : "en_us"));
         if(args.length == 0) {helpCommand(args);return;};
         Main.args = args;
         executeCommand("help",Main::helpCommand);
@@ -50,6 +56,8 @@ public class Main {
             context.evaluateString(script,file.getName());
         } catch (FileNotFoundException ignored) {
 
+        } catch (Exception e) {
+            PhyssReporter.reportError(0,0," at unexpected exception",e.getMessage());
         }
     }
 

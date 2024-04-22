@@ -8,6 +8,7 @@ import static com.skoow.physs.lexer.TokenType.EOF;
 
 public class PhyssReporter {
     public static boolean hadError = false;
+    public static String name = "";
     public static void error(int line, int symbol, PhyssException exception) {
         reportError(line,symbol,"",exception.getMessage());
         PhyssReporter.hadError = true;
@@ -25,25 +26,25 @@ public class PhyssReporter {
     }
 
     public static void reportDebug(int line, int symbol, String message) {
-        System.out.printf("\u001B[35m[Physs][DEBUG][%s:%s] %s%n\u001B[0m",line,symbol,message);
+        System.out.printf("\u001B[35m[Physs][%s][DEBUG][%s:%s] %s%n\u001B[0m",name,line,symbol,message);
     }
     public static void reportDebug(String message) {
         System.out.printf("\u001B[35m[Physs][DEBUG] %s%n\u001B[0m",message);
     }
 
     public static void reportInfo(int line, int symbol, String message) {
-        System.out.printf("\u001B[39m[Physs][INFO][%s:%s] %s%n\u001B[0m",line,symbol,message);
+        System.out.printf("\u001B[39m[Physs][%s][INFO][%s:%s] %s%n\u001B[0m",name,line,symbol,message);
     }
 
     public static void reportInput(int line, int symbol, String message) {
-        System.out.printf("\u001B[36m[Physs][IN][%s:%s] %s\u001B[0m",line,symbol,message);
+        System.out.printf("\u001B[36m[Physs][%s][IN][%s:%s] %s\u001B[0m",name,line,symbol,message);
     }
 
     public static void reportError(int line, int symbol, String where, String message) {
-        System.out.printf("\u001B[31m[Physs][ERROR][%s:%s] Exception%s: %s%n\u001B[0m",line,symbol,where,message);
+        System.out.printf("\u001B[31m[Physs][%s][ERROR][%s:%s] Exception%s: %s%n\u001B[0m",name,line,symbol,where,message);
     }
 
     public static void reportWarn(int line, int symbol, String where, String message) {
-        System.out.printf("\u001B[33m[Physs][WARN][%s:%s] Warning%s: %s%n\u001B[0m",line,symbol,where,message);
+        System.out.printf("\u001B[33m[Physs][%s][WARN][%s:%s] Warning%s: %s%n\u001B[0m",name,line,symbol,where,message);
     }
 }

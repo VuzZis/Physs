@@ -6,13 +6,15 @@ import com.skoow.physs.engine.Context;
 import com.skoow.physs.lexer.Token;
 import com.skoow.physs.runtime.Interpreter;
 import com.skoow.physs.runtime.Scope;
+import com.skoow.physs.runtime.exc.UndefinedValue;
 
 import java.util.List;
 
-public class PhyssProgramFn implements PhyssFn {
+public class PhyssProgramFn extends PhyssClassFn {
 
     private final List<Token> params;
     private final List<Stmt> body;
+    Object self = new UndefinedValue();
     private int argCount = 0;
 
     public PhyssProgramFn(FunctionStmt stmt) {
@@ -29,18 +31,18 @@ public class PhyssProgramFn implements PhyssFn {
     @Override
     public Object methodOrConstructor(Interpreter interpreter, List<Object> args) {
         Scope scope = new Scope(interpreter.scope);
+        scope.defineVariable("this",self);
         int i = 0;
         for (Token param : params) {
             String paramName = param.lexeme;
             scope.defineVariable(paramName,args.get(i));
             i++;
         }
-        interpreter.blockStmt(body,scope);
-        return null;
+        return interpreter.blockStmt(body,scope);
     }
 
     @Override
     public String toString() {
-        return String.format("fn%s",params.stream().map((k) -> k.lexeme).toList().toString());
+        return String.format("Function%s",params.stream().map((k) -> k.lexeme).toList().toString());
     }
 }

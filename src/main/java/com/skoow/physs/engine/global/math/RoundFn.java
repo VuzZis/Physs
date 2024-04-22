@@ -1,12 +1,13 @@
-package com.skoow.physs.engine.global;
+package com.skoow.physs.engine.global.math;
 
+import com.skoow.physs.ast.literal.Literals;
 import com.skoow.physs.runtime.Interpreter;
 import com.skoow.physs.runtime.wrap.PhyssFn;
 import com.skoow.physs.util.TextUtils;
 
 import java.util.List;
 
-public class IsNumberFn implements PhyssFn {
+public class RoundFn implements PhyssFn {
     @Override
     public int argCount() {
         return 1;
@@ -15,12 +16,8 @@ public class IsNumberFn implements PhyssFn {
     @Override
     public Object methodOrConstructor(Interpreter interpreter, List<Object> args) {
         Object obj = args.get(0);
-        try {
-            Double.parseDouble(obj.toString());
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
+        double d = (double) Literals.DOUBLE.cast(obj);
+        return (double) Math.round(d);
     }
 
     @Override

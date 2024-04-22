@@ -1,13 +1,1 @@
-val a = (in "Hi! Pick a number: ");
-while(!isNum(a)) {
-    out "Not a number!";
-    a = in "Pick again: ";
-}
-a = a ~~ num;
-out a%2;
-a = a ~~ bool;
-out a;
-a = a ~~ str;
-out a;
-a = a ~~ id;
-out a;
+out "Hi!";

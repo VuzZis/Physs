@@ -3,6 +3,7 @@ package com.skoow.physs.ast;
 import com.skoow.physs.ast.expression.*;
 import com.skoow.physs.ast.literal.*;
 import com.skoow.physs.ast.statement.*;
+import com.skoow.physs.engine.component.Translatable;
 import com.skoow.physs.error.PhyssReporter;
 import com.skoow.physs.error.errors.AstException;
 import com.skoow.physs.lexer.Token;
@@ -35,6 +36,7 @@ public class Parser {
 
     private Stmt declaration() {
         try {
+            if(match(CLASS)) return classDeclaration();
             if(match(FUNCTION)) return fnDeclaration("function");
             if(match(VAL)) return varDeclaration();
             return statement();
@@ -44,29 +46,39 @@ public class Parser {
         }
     }
 
+    private Stmt classDeclaration() {
+        Token name = consume(IDENTIFIER,Translatable.get("parser.expected_class_name"));
+        consume(LEFT_BRACE,Translatable.get("parser.expected_class_brace_l"));
+        List<FunctionStmt> functions = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd())
+            functions.add((FunctionStmt) fnDeclaration("method"));
+        consume(RIGHT_BRACE,Translatable.get("parser.expected_class_brace_r"));
+        return new ClassStmt(name,functions,position);
+    }
+
     private Stmt fnDeclaration(String kind) {
-        Token name = consume(IDENTIFIER,"Expected %s name",kind);
-        consume(LEFT_PAREN,"Expected '(' after %s name",kind);
+        Token name = consume(IDENTIFIER, Translatable.get("parser.fn_expected_name"),kind);
+        consume(LEFT_PAREN,Translatable.get("parser.fn_expected_paren_l"),kind);
         List<Token> params = new ArrayList<>();
         if(!check(RIGHT_PAREN)) {
             do {
-                if(params.size() >= 255) throw error(peek(),"More than 255 parameters specified");
-                params.add(consume(IDENTIFIER,"Expected parameter name"));
+                if(params.size() >= 255) throw error(peek(),Translatable.get("parser.args_limit"));
+                params.add(consume(IDENTIFIER,Translatable.get("parser.arg_name_not_found")));
             } while(match(COMMA));
         }
-        consume(RIGHT_PAREN,"Expected ')' after %s parameters");
-        consume(LEFT_BRACE,"Expected '{' before %s body",kind);
+        consume(RIGHT_PAREN,Translatable.get("parser.fn_expected_paren_r"),kind);
+        consume(LEFT_BRACE,Translatable.get("fn_expected_body_brace"),kind);
         List<Stmt> body = block();
         return new FunctionStmt(name,params,body,position);
     }
 
     private Stmt varDeclaration() {
-        Token name = consume(IDENTIFIER,"Expected variable name.");
+        Token name = consume(IDENTIFIER,Translatable.get("parser.var_expected_name"));
         Expr initializer = null;
         if(match(EQUALS)) {
             initializer = expr();
         }
-        consume(SEMICOLON,"Expected ';' after variable declaration.");
+        consume(SEMICOLON,Translatable.get("parser.semicolon_expected"));
         return new VarDeclarStmt(name,initializer,position);
     }
 
@@ -82,7 +94,7 @@ public class Parser {
         if(match(EXIT)) return exitStatement(requireSemicolon);
         if(match(WHILE)) return whileStatement();
         if(match(LEFT_BRACE)) return new BlockStmt(block(),position);
-        return exprStatement(true);
+        return exprStatement(requireSemicolon);
     }
 
     private Stmt exitStatement(boolean requireSemicolon) {
@@ -90,7 +102,7 @@ public class Parser {
         Stmt exitBody = statement(false);
         Expr returnValue = null;
         if(match(COMMA)) returnValue = expr();
-        if(requireSemicolon) consume(SEMICOLON,"Expected ';' after exit statement.");
+        if(requireSemicolon) consume(SEMICOLON,Translatable.get("parser.semicolon_expected"));
         return new BlockStmt(Arrays.asList(
                 exitBody,
                 new ReturnStmt(keyword,returnValue,position)
@@ -101,12 +113,12 @@ public class Parser {
         Token keyword = previous();
         Expr value = null;
         if(!check(SEMICOLON)) value = expr();
-        if(needSemicolon) consume(SEMICOLON,"Expected ';' after return statement.");
+        if(needSemicolon) consume(SEMICOLON,Translatable.get("parser.semicolon_expected"));
         return new ReturnStmt(keyword,value,position);
     }
 
     private Stmt forStatement() {
-        consume(LEFT_PAREN,"Expected '(' after 'for'");
+        consume(LEFT_PAREN,Translatable.get("parser.for_expected_paren_l"));
 
         Stmt initializer;
         if(match(SEMICOLON)) initializer = null;
@@ -115,12 +127,12 @@ public class Parser {
 
         Expr condition = null;
         if(!check(SEMICOLON)) condition = expr();
-        consume(SEMICOLON,"Expected ';' after loop condition");
+        consume(SEMICOLON,Translatable.get("parser.semicolon_expected"));
 
         Expr increment = null;
         if(!check(RIGHT_PAREN)) increment = expr();
 
-        consume(RIGHT_PAREN,"Expected ')' after 'for' clauses");
+        consume(RIGHT_PAREN,Translatable.get("parser.for_expected_paren_r"));
         Stmt body = statement();
         if(increment != null)
             body = new BlockStmt(Arrays.asList(
@@ -171,7 +183,7 @@ public class Parser {
 
     private Stmt printStatement(boolean needSemicolon) {
         Expr value = expr();
-        if(needSemicolon) consume(SEMICOLON,"Expected ';' after print statement.");
+        if(needSemicolon) consume(SEMICOLON,Translatable.get("parser.semicolon_expected"));
         return new PrintStmt(value,position);
     }
     private Expr inputExpr() {
@@ -181,7 +193,7 @@ public class Parser {
 
     private Stmt exprStatement(boolean needSemicolon) {
         Expr value = expr();
-        if(needSemicolon) consume(SEMICOLON,"Expected ';' after expression.");
+        if(needSemicolon) consume(SEMICOLON,Translatable.get("parser.semicolon_expected"));
         return new ExprStmt(value,position);
     }
 
@@ -198,8 +210,10 @@ public class Parser {
             if(expr instanceof VarGetExpr varExpr) {
                 Token name = varExpr.var;
                 return new AssignmentExpr(name,value,position);
+            } else if(expr instanceof GetPropertyExpr getExpr) {
+                return new PropertyAssignmentExpr(getExpr.expr,getExpr.var,value,position);
             }
-            throw error(equals,"Invalid variable name needed assign to.");
+            throw error(equals,Translatable.get("parser.invalid_variable_name"));
         }
         return expr;
     }
@@ -242,7 +256,7 @@ public class Parser {
         if(match(CAST)) {
             Token operator = advance();
             Literals opLiteral = Literals.get(operator.tokenType);
-            if(opLiteral == null) throw error(operator,"Unexpected literal type cast to.");
+            if(opLiteral == null) throw error(operator,Translatable.get("parser.invalid_literal_cast_name"));
             expr = new CastExpr(expr,opLiteral,position);
         }
         return expr;
@@ -284,6 +298,10 @@ public class Parser {
         Expr expr = primary();
         while (true) {
             if(match(LEFT_PAREN)) expr = finishCall(expr);
+            else if(match(DOT)) {
+                Token name = consume(IDENTIFIER,Translatable.get("parser.expected_property_on_call"));
+                expr = new GetPropertyExpr(name,expr,position);
+            }
             else break;
         }
         return expr;
@@ -293,10 +311,10 @@ public class Parser {
         List<Expr> args = new ArrayList<>();
         if(!check(RIGHT_PAREN))
             do {
-                if(args.size() >= 255) error(peek(),"More than 255 arguments specified");
+                if(args.size() >= 255) error(peek(),Translatable.get("parser.args_limit"));
                 args.add(expr());
             } while(match(COMMA));
-        Token paren = consume(RIGHT_PAREN,"Expected ')' after call arguments");
+        Token paren = consume(RIGHT_PAREN,Translatable.get("parser.args_expected_paren_r"));
         return new CallExpr(callee,paren,args,position);
     }
 
@@ -308,27 +326,30 @@ public class Parser {
 
         if(match(STRING,NUMBER)) return new BasicLiteral(previous().literal,position);
         if(match(DOLLAR)) {
-            return new IdentifierLiteral(consume(IDENTIFIER,"Expected identifier literal").lexeme,position);
+            return new IdentifierLiteral(consume(IDENTIFIER,Translatable.get("parser.literal_identifier_expected")).lexeme,position);
         }
         if(match(IDENTIFIER)) return new VarGetExpr(previous(),position);
         if(match(LEFT_PAREN)) {
             List<Expr> expr = new ArrayList<>();
-            do {
-                expr.add(expr());
-            } while (match(COMMA));
-            consume(RIGHT_PAREN,"Expected ')' after expression.");
+            if(!check(RIGHT_PAREN))
+                do {
+                    expr.add(expr());
+                } while (match(COMMA));
+            consume(RIGHT_PAREN,Translatable.get("parser.expr_expected_paren_r"));
             if(match(ARROW)) return lambdaExpr(expr);
-            if(expr.size() > 1) throw error(peek(),"Unexpected list of expressions.");
+            if(expr.size() > 1) throw error(peek(),Translatable.get("parser.expr_unexpected_list"));
+            if(expr.size() < 1) return null;
             return new GroupExpr(expr.get(0),position);
         }
-        throw error(peek(),"Expected expression, found: '"+peek().lexeme+"'");
+        throw error(peek(),String.format(Translatable.get("parser.unx_expression"),peek().lexeme));
     }
 
     private Expr lambdaExpr(List<Expr> args) {
+        if(args.size() > 255) throw error(peek(),Translatable.get("parser.args_limit"));
         List<Token> params = new ArrayList<>();
         args.forEach(e -> {
             if(e instanceof VarGetExpr v) params.add(v.var);
-            else throw error(peek(),"Expected parameter, found "+e.getClass().getSimpleName());
+            else throw error(peek(),String.format(Translatable.get("parser.args_unexpected_parameter_type"),e.getClass().getSimpleName()));
         });
         Stmt stmt = statement(false);
         return new LambdaExpr(params,stmt,position);
