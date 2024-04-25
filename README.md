@@ -1,6 +1,6 @@
 # Physs
-![Physs banner](/img/physs_banner.png)
-## Installation
+![Physs banner](/img/physs_banner.png) 
+## Installation [![Physs Build](https://github.com/VuzZis/Physs/actions/workflows/gradle.yml/badge.svg)](https://github.com/VuzZis/Physs/actions/workflows/gradle.yml)
 * Download latest .zip file from **Releases**
 * Unpack the zip file in some folder you want to. *(e.g. Programs folder)*
 * Run the `path.bat` file if you want to access it in command line just by name. If not (`.\physs.cmd`)
