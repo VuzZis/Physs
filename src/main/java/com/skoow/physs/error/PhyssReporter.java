@@ -40,6 +40,10 @@ public class PhyssReporter {
         System.out.printf("\u001B[36m[Physs][%s][IN][%s:%s] %s\u001B[0m",name,line,symbol,message);
     }
 
+    public static void reportError(String message) {
+        System.out.printf("\u001B[31m[Physs][ERROR] %s%n\u001B[0m",message);
+    }
+
     public static void reportError(int line, int symbol, String where, String message) {
         System.out.printf("\u001B[31m[Physs][%s][ERROR][%s:%s] Exception%s: %s%n\u001B[0m",name,line,symbol,where,message);
     }

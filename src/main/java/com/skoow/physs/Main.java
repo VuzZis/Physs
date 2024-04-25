@@ -24,6 +24,7 @@ public class Main {
         Main.args = args;
         executeCommand("help",Main::helpCommand);
         executeCommand("run",Main::runScriptCommand);
+        executeCommand("gui",Main::runGuiCommand);
     }
 
     private static void executeCommand(String com, Consumer<String[]> helpCommand) {
@@ -31,19 +32,24 @@ public class Main {
         if(Objects.equals(command, com)) helpCommand.accept(args);
     }
 
+
+    private static void runGuiCommand(String[] args) {
+        PhyssReporter.reportError("GUI Not supported yet!");
+    }
+
     private static void runScriptCommand(String[] args) {
         if(args.length < 2) {
-            System.out.println(TextUtils.red("Please specify file path/name."));
+            PhyssReporter.reportError("Please specify file path/name.");
             return;
         }
         String fileName = args[1];
         if(!fileName.endsWith(".phy")) {
-            System.out.println(TextUtils.red("File should be type of .phy!"));
+            PhyssReporter.reportError("File should be type of .phy!");
             return;
         }
         File file = new File(fileName);
         if(!file.exists()) {
-            System.out.println(TextUtils.red("File doesn't exist."));
+            PhyssReporter.reportError("File hasn't been created.");
             return;
         }
         try {
@@ -57,7 +63,7 @@ public class Main {
         } catch (FileNotFoundException ignored) {
 
         } catch (Exception e) {
-            PhyssReporter.reportError(0,0," at unexpected exception",e.getMessage());
+            PhyssReporter.reportError(e.getMessage());
         }
     }
 

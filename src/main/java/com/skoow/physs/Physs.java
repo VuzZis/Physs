@@ -3,7 +3,7 @@ package com.skoow.physs;
 
 
 public class Physs {
-    public static final String VERSION = "0.0";
+    public static final String VERSION = "0.1";
 
     public static final String WELCOME_ASCII = """
                 ____   __
