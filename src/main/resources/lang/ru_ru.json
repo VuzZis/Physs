@@ -1,4 +1,3 @@
-
 {
   "engine.context.evaluate_time": "Затрачено %sms на оценку %s",
   "engine.context.parse_failed": "Не удалось разобрать: %s",
@@ -10,6 +9,10 @@
   "parser.args_limit": "Указано более 255 аргументов",
   "parser.args_unexpected_parameter_type": "Ожидается параметр, найдено: %s",
   "parser.block_expected_brace": "Ожидается '}' после тела программы",
+  "parser.expected_class_brace_l": "Expected '{' before class body",
+  "parser.expected_class_brace_r": "Expected '}' after class body",
+  "parser.expected_class_name": "Expected class name",
+  "parser.expected_property_on_call": "Expected property identifier after '.'",
   "parser.expr_expected_paren_r": "Ожидается ')' после выражения",
   "parser.expr_unexpected_list": "Неожиданный список выражений",
   "parser.fn_expected_body_brace": "Ожидается '{' перед %s телом",
@@ -33,6 +36,7 @@
   "runtime.cannot_cast": "Не удалось привести %s к %s",
   "runtime.cannot_operator_to_binary": "Невозможно применить оператор '%s' для типа %s, %s",
   "runtime.cannot_operator_to_unary": "Невозможно применить оператор '%s' для типа %s",
+  "runtime.class_undefined_property": "Undefined property: '%s'",
   "runtime.condition_not_boolean": "Ожидается булево значение условия, найдено: %s",
   "runtime.failed_to_input": "Не удалось прочитать ввод: %s",
   "runtime.function_inner_scope": "Невозможно определить функцию во внутренних областях",
@@ -40,6 +44,8 @@
   "runtime.loop_overflow": "Переполнение цикла",
   "runtime.not_callable": "Объект не является вызываемым",
   "runtime.null_print": "Пустой вывод",
+  "runtime.object_not_property-able": "Object cannot be used as a property container: %s",
+  "runtime.property_is_method": "Method is not assignable",
   "runtime.return_outside_block": "Неожиданный оператор возврата за пределами блока",
   "runtime.unx_node": "Обнаружен неожиданный узел: %s",
   "runtime.unx_operator_binary": "Неожиданный оператор для выражения: %s %s %s",
