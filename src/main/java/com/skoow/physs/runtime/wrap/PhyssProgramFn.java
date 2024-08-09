@@ -45,4 +45,9 @@ public class PhyssProgramFn extends PhyssClassFn {
     public String toString() {
         return String.format("Function%s",params.stream().map((k) -> k.lexeme).toList().toString());
     }
+
+    @Override
+    public boolean isStatic() {
+        return false;
+    }
 }

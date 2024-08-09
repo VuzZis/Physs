@@ -54,5 +54,6 @@
   "parser.expected_property_on_call" : "Expected property identifier after '.'",
   "runtime.class_undefined_property" : "Undefined property: '%s'",
   "runtime.object_not_property-able" : "Object cannot be used as a property container: %s",
-  "runtime.property_is_method" : "Method is not assignable"
+  "runtime.property_is_method" : "Method is not assignable",
+  "runtime.restricted_java_package" : "Restricted java package: %s"
 }

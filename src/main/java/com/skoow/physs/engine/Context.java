@@ -4,10 +4,12 @@ import com.skoow.physs.ast.Parser;
 import com.skoow.physs.ast.statement.Program;
 import com.skoow.physs.engine.component.Translatable;
 import com.skoow.physs.error.PhyssReporter;
+import com.skoow.physs.gson.GsonUtil;
 import com.skoow.physs.lexer.scanner.Scanner;
 import com.skoow.physs.runtime.Interpreter;
 import com.skoow.physs.runtime.Scope;
 
+import java.io.File;
 import java.util.Date;
 
 public class Context {
@@ -36,6 +38,7 @@ public class Context {
         Parser astParser = new Parser(scanner.scanTokens());
         if(PhyssReporter.hadError) {PhyssReporter.reportDebug(Translatable.getf("engine.context.scan_failed",fileName)); return;}
         Program script = new Program(astParser.parseStatements());
+        GsonUtil.javaToJson(new File("ast.json"),script);
         if(PhyssReporter.hadError) {PhyssReporter.reportDebug(Translatable.getf("engine.context.parse_failed",fileName)); return;}
 
         long timeBegin = new Date().getTime();

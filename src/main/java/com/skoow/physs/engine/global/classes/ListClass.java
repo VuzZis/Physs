@@ -17,6 +17,11 @@ public class ListClass extends PhyssClass {
     static {
         methods.put("instance", new PhyssClassFn() {
             @Override
+            public boolean isStatic() {
+                return false;
+            }
+
+            @Override
             public int argCount() {
                 return -1;
             }
@@ -29,6 +34,11 @@ public class ListClass extends PhyssClass {
             }
         });
         methods.put("get", new PhyssClassFn() {
+            @Override
+            public boolean isStatic() {
+                return false;
+            }
+
             @Override
             public int argCount() {
                 return 1;
@@ -43,6 +53,11 @@ public class ListClass extends PhyssClass {
         });
         methods.put("add", new PhyssClassFn() {
             @Override
+            public boolean isStatic() {
+                return false;
+            }
+
+            @Override
             public int argCount() {
                 return 1;
             }
@@ -56,6 +71,11 @@ public class ListClass extends PhyssClass {
         });
         methods.put("size", new PhyssClassFn() {
             @Override
+            public boolean isStatic() {
+                return false;
+            }
+
+            @Override
             public int argCount() {
                 return 0;
             }
@@ -67,6 +87,11 @@ public class ListClass extends PhyssClass {
             }
         });
         methods.put("forEach", new PhyssClassFn() {
+            @Override
+            public boolean isStatic() {
+                return false;
+            }
+
             @Override
             public int argCount() {
                 return 1;
@@ -87,8 +112,37 @@ public class ListClass extends PhyssClass {
                 throw new RunException("Expected function or lambda expression");
             }
         });
+        methods.put("str", new PhyssClassFn() {
+            @Override
+            public boolean isStatic() {
+                return false;
+            }
+
+            @Override
+            public int argCount() {
+                return 0;
+            }
+
+            @Override
+            public Object methodOrConstructor(Interpreter interpreter, List<Object> args) {
+                List<Object> list = (List<Object>) self.get("$$LIST");
+                StringBuilder builder = new StringBuilder("[");
+                for (Object o : list) {
+                    builder.append(o);
+                    builder.append(",");
+                }
+                builder.setCharAt(builder.length()-1,']');
+                return builder.toString();
+            }
+        });
 
     }
+
+    @Override
+    public String toString() {
+        return methods.get("str").methodOrConstructor(null,new ArrayList<>()).toString();
+    }
+
     public ListClass() {
         super("List", methods);
     }

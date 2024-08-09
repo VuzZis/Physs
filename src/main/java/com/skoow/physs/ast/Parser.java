@@ -267,6 +267,10 @@ public class Parser {
         Expr expr = factor();
         while(match(MINUS,PLUS)) {
             Token operator = previous();
+            if(expr instanceof VarGetExpr varExpr && match(EQUALS)) {
+                Expr right = logical();
+                return new AssignmentExpr(varExpr.var, new BinaryExpr(varExpr,operator,right,position),position);
+            }
             Expr right = factor();
             expr = new BinaryExpr(expr,operator,right,position);
         }
@@ -278,6 +282,10 @@ public class Parser {
         Expr expr = unary();
         while(match(MULTIPLIER,SLASH,MOD)) {
             Token operator = previous();
+            if(expr instanceof VarGetExpr varExpr && match(EQUALS)) {
+                Expr right = logical();
+                return new AssignmentExpr(varExpr.var, new BinaryExpr(varExpr,operator,right,position),position);
+            }
             Expr right = unary();
             expr = new BinaryExpr(expr,operator,right,position);
         }
@@ -295,7 +303,13 @@ public class Parser {
     }
 
     private Expr call() {
-        Expr expr = primary();
+        Expr expr;
+        if(match(ARRAY)) {
+            expr = new VarGetExpr(
+                    new Token(IDENTIFIER,"List","List",previous().line, previous().symbol),
+                    new Position(previous().line, previous().symbol));
+        }
+        else expr = primary();
         while (true) {
             if(match(LEFT_PAREN)) expr = finishCall(expr);
             else if(match(DOT)) {
@@ -338,7 +352,7 @@ public class Parser {
             consume(RIGHT_PAREN,Translatable.get("parser.expr_expected_paren_r"));
             if(match(ARROW)) return lambdaExpr(expr);
             if(expr.size() > 1) throw error(peek(),Translatable.get("parser.expr_unexpected_list"));
-            if(expr.size() < 1) return null;
+            if(expr.isEmpty()) return null;
             return new GroupExpr(expr.get(0),position);
         }
         throw error(peek(),String.format(Translatable.get("parser.unx_expression"),peek().lexeme));
@@ -415,6 +429,13 @@ public class Parser {
     private Token peek() {
         if(position.current >= tokens.size()) return previous();
         Token token = tokens.get(position.current);
+        position.line = token.line;
+        position.symbol = token.symbol;
+        return token;
+    }
+    private Token peekNext() {
+        if(position.current+1 >= tokens.size()) return peek();
+        Token token = tokens.get(position.current+1);
         position.line = token.line;
         position.symbol = token.symbol;
         return token;

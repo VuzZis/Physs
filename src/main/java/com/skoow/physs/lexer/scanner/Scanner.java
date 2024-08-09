@@ -39,6 +39,7 @@ public class Scanner {
         DOUBLE_CHAR_TOKENS.put(">=",GREATER_EQUALS); DOUBLE_CHAR_TOKENS.put("<=",LESS_EQUALS);
         DOUBLE_CHAR_TOKENS.put("||",OR); DOUBLE_CHAR_TOKENS.put("&&",AND);
         DOUBLE_CHAR_TOKENS.put("->",ARROW); DOUBLE_CHAR_TOKENS.put("~~",CAST);
+        DOUBLE_CHAR_TOKENS.put("[]",ARRAY);
 
 
 

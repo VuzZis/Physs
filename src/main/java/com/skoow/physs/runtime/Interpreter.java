@@ -12,10 +12,7 @@ import com.skoow.physs.lexer.TokenType;
 import com.skoow.physs.lexer.scanner.Position;
 import com.skoow.physs.runtime.exc.Return;
 import com.skoow.physs.runtime.exc.UndefinedValue;
-import com.skoow.physs.runtime.wrap.PhyssClass;
-import com.skoow.physs.runtime.wrap.PhyssClassInstance;
-import com.skoow.physs.runtime.wrap.PhyssFn;
-import com.skoow.physs.runtime.wrap.PhyssProgramFn;
+import com.skoow.physs.runtime.wrap.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -103,6 +100,11 @@ public class Interpreter {
         Object object = evaluate(line.expr,scope);
         if(object instanceof PhyssClassInstance instance) {
             return instance.get(line.var.lexeme);
+        } else if(object instanceof PhyssClass classe) {
+            PhyssFn fn = classe.getMethods().get(line.var.lexeme);
+            if(fn instanceof PhyssClassFn classFn && !classFn.isStatic())
+                throw error(line,Translatable.getf("runtime.object_not_property-able",getName(object)));
+            return fn;
         } else if(!object.getClass().getName().startsWith("java.lang")) {
             try {
                 Method[] methods = object.getClass().getMethods();
