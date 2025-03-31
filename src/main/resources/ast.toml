@@ -1,0 +1,25 @@
+order = [
+    "Stmt",
+    "Expr",
+    "BinaryExpr"
+]
+
+[Stmt]
+name = "String"
+pos = "#parsing.SourcePos"
+    [Stmt.init]
+    remove = ["name"]
+    set = {name = "Stmt"}
+
+[Expr]
+extends = "@ast.Stmt"
+    [Expr.init]
+    set = {name = "Expr"}
+
+[BinaryExpr]
+extends = "@ast.Expr"
+left = "@ast.Expr"
+right = "@ast.Expr"
+operator = "#parsing.lexer.Token"
+    [BinaryExpr.init]
+    set = {name = "BinaryExpr"}

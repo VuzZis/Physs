@@ -1,0 +1,75 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+java {
+    toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+}
+
+group = 'com.skoow'
+version = physs_version
+configurations {
+    shadowed {
+        extendsFrom implementation
+    }
+}
+ext {
+    jabelVersion = "93fde537c7"
+}
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+    implementation 'com.squareup:javapoet:1.13.0'
+}
+
+shadowJar {
+    archiveClassifier = ''
+
+    manifest {
+        attributes 'Main-Class': 'com.skoow.physs.Main'
+    }
+
+    relocate 'com.skoow.physs.gen.ast', 'com.skoow.physs.meta'
+    relocate 'com.skoow.physs.gen.tokens', 'com.skoow.physs.meta'
+    relocate 'com.skoow.physs.gen', 'com.skoow.physs.meta'
+
+    exclude 'com/skoow/physs/gen/MetaGenerator.class'
+    exclude 'com/skoow/physs/util/FileClassCompiler.class'
+    exclude 'ast.toml'
+    exclude 'tokens.toml'
+
+    minimize()
+
+    configurations = [project.configurations.shadowed]
+
+    dependencies {
+        exclude(dependency('com.squareup:javapoet'))
+        exclude(dependency('com.moandjiezana.toml:toml4j'))
+    }
+}
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << "-parameters"
+}
+task generateClasses {
+    doLast {
+        javaexec {
+            main = "com.skoow.physs.gen.MetaGenerator"
+            classpath = sourceSets.main.runtimeClasspath
+            args = []
+        }
+    }
+}
+task deploy {
+    dependsOn classes, generateClasses, shadowJar
+}
+
+
+// compileJava.dependsOn(generateClasses)
+
+test {
+    useJUnitPlatform()
+}

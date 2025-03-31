@@ -1,0 +1,56 @@
+import java.io.File; //File will refer to java.io.File
+import other.File as Fi; //Fi will refer to other.File
+extends OtherClass;
+script_mode; //changes the class to script (or natively a class with constructor being the full script)
+
+int a = 3;
+any a2;
+
+var a3 = "Error!"; //error, cannot use autotyped variables outside of methods
+
+String annoTest = "";
+
+String[] arrayTest = {"hi","lol","fun"} //new String[] {"hi", ...}
+ArrayList listTest = ["hi","lol","fun"] //new ArrayList().addAll("hi",...)
+
+constructor(first : String) -> (first + first) {
+
+}
+
+
+def static public main(args : String[]) {
+
+    var b = 3;
+    b = ""; //type error (var autocreates the type)
+
+    any c = "";
+    c = 3;
+
+    print("Hello!");
+    print(sum(3,5));
+
+    if(a in [3; 5]) { // [3; 5] is a new expression, which in this case means 3 <= a <= 5, [3; 5) means 3 <= a < 5
+                      // range expressions can only start with [, ( is restricted
+                      // 'in' is basically analogue of .contains()
+        print("True!")
+    }
+
+    for(a in [3; 10):1) { //[3; 10):1 here means an iterable, starting from 3, and going to 10 (exclusively) with a step of 1
+        print(a);
+        /*
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+         */
+    }
+
+}
+def static private int sum(a : int,b) {
+    return a + b;
+}
+
+sum(3,5) //run error (expected only declarations)
